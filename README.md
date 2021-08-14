@@ -16,9 +16,13 @@ This repository stores the implementation of the proposed approaches in the foll
 ```
 _*An extended version for journal submission is under preparation._
 
-# Files and Usage
-
+## Files and Usage
+```
+strong_connectedness_test.py --> main script
+testGraphs.py --> several adjacency matrices for testing
+msgForwarder.py --> simulate sending message over nodes and visualize graph
+nodeconnCDC.py --> algorithms in CDC paper
+nodeconnJournal.py --> algorithms for extended journal paper (under preparation)
 ```
 
-```
-The code can be run by executing 
+The code can be executing ```strong_connectedness_test.py ```.
