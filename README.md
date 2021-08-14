@@ -1,4 +1,4 @@
-# dist_strong_connectivity
+# dist-strong-connectivity
 Finite-Time Distributed Algorithms for Verifying and Ensuring Strong Connectivity in Directed Networks
 
 **Author: Made Widhi Surya Atman  
@@ -14,7 +14,7 @@ This repository stores the implementation of the proposed approaches in the foll
   note = {To be presented}
 }
 ```
-An extended version for journal submission is under preparation.
+_*An extended version for journal submission is under preparation._
 
 # Files and Usage
 
