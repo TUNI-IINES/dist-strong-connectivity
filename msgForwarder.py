@@ -46,7 +46,8 @@ class MsgForwarder(object):
         nx.draw(self.G, self.Gpos, edge_color=colors, width=list(weights),\
                 with_labels=True, connectionstyle='arc3, rad = 0.1')
         plt.legend(self.dummyLines, self.labels)
-        plt.show(block=False)
+        plt.show()
+        #plt.show(block=False)
                 
     # Process outgoing message into buffer to be read for each node i
     def processBuffer(self):
