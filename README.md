@@ -32,14 +32,6 @@ nodeconnCDC.py --> algorithms in CDC paper
 
 Main script to execute.
 
-To switch between algorithms in CDC paper and the extended version (unstable - under preparation),
-comment/uncomment between line 3 and 4.
-
-``` python
-from nodeconnCDC import NodeConn
-#from nodeconnJournal import NodeConn
-```
-
 To switch between algorithms in CDC paper, comment/uncomment between line 41-43 in.
 
 ```python
