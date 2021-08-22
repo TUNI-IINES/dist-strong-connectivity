@@ -5,8 +5,8 @@ from nodeconnCDC import NodeConn
 
 
 # Admittance matrix to ease assigning for in-neighbor and out-neighbor
-A = tg.A1 # Strongly connected digraph with 8 nodes 
-# A = tg.A2 # Weakly connected digraph with 10 nodes
+# A = tg.A1 # Strongly connected digraph with 8 nodes 
+A = tg.A2 # Weakly connected digraph with 10 nodes
 # A = tg.A3 # Disconnected digraph with 20 nodes
 
 n = A.shape[0] # A should always be a square matrix
