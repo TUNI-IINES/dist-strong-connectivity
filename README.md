@@ -26,7 +26,6 @@ strong_connectedness_test.py --> main script
 testGraphs.py --> several adjacency matrices for testing
 msgForwarder.py --> simulate sending message over nodes and visualize graph
 nodeconnCDC.py --> algorithms in CDC paper
-nodeconnJournal.py --> algorithms for extended journal paper (under preparation)
 ```
 
 ### ```strong_connectedness_test.py```
@@ -58,10 +57,6 @@ outMessage = Node[i].updateEnsureStrongConn(inMessage) # Algorithm 3
    The procedure is repeated until the graph is strongly connected.  
    _Note: running the algorithm with disconnected graph results in abnormal exit (never meet ending condition)._
 
-To switch between algorithms in extended Journal version (unstable - under preparation),
-comment/uncomment between line 49-52.
-_*Under preparation._
-
 ### ```testGraphs.py```
 
 List of test graph used during the testing. (to be detailed, under preparation)
@@ -81,8 +76,4 @@ Implementation of the algorithms as a ```NodeConn``` class.
 Algorithm 1  
 Algorithm 2  
 Algorithm 3  
-(to be detailed, under preparation)
-
-### ```nodeconnJournal.py```
-
 (to be detailed, under preparation)
