@@ -69,7 +69,7 @@ Algorithm 3
 
 ## Contributors
 
-The algorithms in this repository is developed by Made Widhi Surya Atman and Azwirman Gusrialdi from Intelligent Networked Systems (IINES) Group,
+The algorithms in this repository are developed by Made Widhi Surya Atman and Azwirman Gusrialdi from Intelligent Networked Systems (IINES) Group,
 Faculty of Engineerings and Natural Sciences, Tampere University.
 
 ## Acknowledgements
