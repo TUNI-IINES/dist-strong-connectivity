@@ -2,9 +2,6 @@
 
 Finite-Time Distributed Algorithms for Verifying and Ensuring Strong Connectivity in Directed Networks
 
-**Author: Made Widhi Surya Atman  
-Faculty of Engineerings and Natural Sciences, Tampere University**
-
 This repository stores the implementation of the proposed approaches in the following academic paper:
 
 ```text
@@ -69,3 +66,12 @@ Algorithm 1
 Algorithm 2  
 Algorithm 3  
 (to be detailed, under preparation)
+
+## Constributors
+
+The algorithms in this repository is developed by Made Widhi Surya Atman and Azwirman Gusrialdi from Intelligent Networked Systems (IINES) Group,
+Faculty of Engineerings and Natural Sciences, Tampere University.
+
+## Acknowledgements
+
+This result is part of a project that has received funding from the Academy of Finland under Academy Project decision number 330073 - Resilient distributed optimization for cyber-physical systems.
