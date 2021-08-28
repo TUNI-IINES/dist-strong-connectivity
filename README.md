@@ -67,7 +67,7 @@ Algorithm 2
 Algorithm 3  
 (to be detailed, under preparation)
 
-## Constributors
+## Contributors
 
 The algorithms in this repository is developed by Made Widhi Surya Atman and Azwirman Gusrialdi from Intelligent Networked Systems (IINES) Group,
 Faculty of Engineerings and Natural Sciences, Tampere University.
