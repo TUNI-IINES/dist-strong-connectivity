@@ -42,15 +42,6 @@ def main():
                 # outMessage = Node[i].updateEstimateSCC(inMessage) # Algorithm 2
                 outMessage = Node[i].updateEnsureStrongConn(inMessage) # Algorithm 3
                 
-
-                # Algorithms in Journal version (under preparation)
-                # use "from nodeconnJournal import NodeConn" in line 4
-                # --------------------------------------------------------------------                
-                # outMessage = Node[i].updateVerifyStrongConn(inMessage) # Algorithm 1
-                # outMessage = Node[i].updateEstimateSCC(inMessage) # Algorithm 2
-                # outMessage = Node[i].updateEnsureStrongConn_Weak(inMessage)
-                # outMessage = Node[i].updateEnsureStrongConn_MinLink(inMessage)
-
                 # --------------------------------------------------------------------
 
                 # Sending message to other nodes (to be processed later by MsgForwarder)
