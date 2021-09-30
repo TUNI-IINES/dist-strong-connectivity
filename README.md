@@ -42,7 +42,7 @@ outMessage = Node[i].updateEnsureStrongConn(inMessage) # Algorithm 3
 Implementation of the algorithms as a ```NodeConn``` class.
 1. _Algorithm 1: Distributed verification of a directed graph's strong connectivity._  
    Each node returning their estimation (via terminal output) whether the graph representation of their network communication is strongly connected or not.
-2. _Algorithm 2: Distributed Estimation of Strongly Connected Component._
+2. _Algorithm 2: Distributed Estimation of Strongly Connected Component._  
    Each node estimating their own strongly connected components (SCC), and determine whether their SCC is a sink-scc, source-scc, or the whole graph (the graph is originally a strongly connected graph).
 3. _Algorithm 3: Distributed Link Addition Algorithm to Strongly Connect A Weakly Connected Graph._  
    Each node distributively run Algorithm 2, then a representative node in each sink-scc propose a new link toward a source-scc.
