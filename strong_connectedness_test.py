@@ -1,13 +1,15 @@
 import testGraphs as tg
 from msgForwarder import MsgForwarder
-from nodeconnCDC import NodeConn
-#from nodeconnJournal import NodeConn
+# from nodeconnCDC import NodeConn
+from nodeconnJournal import NodeConn
 
 
 # Admittance matrix to ease assigning for in-neighbor and out-neighbor
-# A = tg.A1 # Strongly connected digraph with 8 nodes 
-A = tg.A2 # Weakly connected digraph with 10 nodes
-# A = tg.A3 # Disconnected digraph with 20 nodes
+# G = tg.graph1 # Strongly connected digraph with 8 nodes 
+# G = tg.graph2 # Weakly connected digraph with 10 nodes
+# G = tg.graph3 # Disconnected digraph with 20 nodes
+G = tg.graph4 # Disconnected digraph with 20 nodes
+A = G['A']
 
 n = A.shape[0] # A should always be a square matrix
 
@@ -40,7 +42,7 @@ def main():
                 # --------------------------------------------------------------------
                 # outMessage = Node[i].updateVerifyStrongConn(inMessage) # Algorithm 1
                 # outMessage = Node[i].updateEstimateSCC(inMessage) # Algorithm 2
-                outMessage = Node[i].updateEnsureStrongConn(inMessage) # Algorithm 3
+                # outMessage = Node[i].updateEnsureStrongConn(inMessage) # Algorithm 3
                 
 
                 # Algorithms in Journal version (under preparation)
@@ -49,7 +51,7 @@ def main():
                 # outMessage = Node[i].updateVerifyStrongConn(inMessage) # Algorithm 1
                 # outMessage = Node[i].updateEstimateSCC(inMessage) # Algorithm 2
                 # outMessage = Node[i].updateEnsureStrongConn_Weak(inMessage)
-                # outMessage = Node[i].updateEnsureStrongConn_MinLink(inMessage)
+                outMessage = Node[i].updateEnsureStrongConn_MinLink(inMessage)
 
                 # --------------------------------------------------------------------
 

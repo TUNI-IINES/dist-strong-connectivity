@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from datetime import datetime
 
 class MsgForwarder(object):
     """
@@ -9,32 +10,39 @@ class MsgForwarder(object):
     The message is a dictionary constructed in NodeConn Object
     consisting of: sender, dest, msgType, and msg
     """
-    def __init__(self, A):
+    def __init__(self, A, showDraw = True, saveFig = False):
         super(MsgForwarder, self).__init__()
         self.A = A.copy()
         self.original_A = A.copy()
         self.n = self.A.shape[0] # A should always be a square matrix
 
+        self.showDraw = showDraw
+        self.saveFig = saveFig
+
         # Initiate empty list (buffer)
         self.buffFrom = [ [] for _ in range(self.n) ]
         self.buffTo = [ [] for _ in range(self.n) ]
-        
+                    
         self.init_drawCommNetwork()
         self.k = 0 # Counter for link addition
 
+        self.AddedLink = []
         self.reconfigure_A = None
         self.reconfigure_newEdges = []
-        self.recorded_reconfigure = [{'number':0, 'links':[]}]
+        self.recorded_reconfigure = []
 
     # Visualize the network
     def init_drawCommNetwork(self):
         # Draw the network
-        rows, cols = np.where(self.A == 1)
+        # Adding Identity to force display of individual isolated node
+        A = self.A + np.eye(self.n) 
+        rows, cols = np.where(A == 1)
         edges = zip(rows.tolist(), cols.tolist())
         self.G = nx.MultiDiGraph()
         self.G.add_edges_from(edges, color='k',weight=1)
         # self.Gpos = nx.circular_layout(self.G)
-        self.Gpos = nx.kamada_kawai_layout(self.G)
+        # self.Gpos = nx.kamada_kawai_layout(self.G)
+        self.Gpos = nx.nx_pydot.graphviz_layout(self.G)
         
         self.colorList = ['r','g','b','c','m','y']
         self.dummyLines = [Line2D([0], [0], color='k', linewidth=1)]
@@ -46,7 +54,14 @@ class MsgForwarder(object):
         nx.draw(self.G, self.Gpos, edge_color=colors, width=list(weights),\
                 with_labels=True, connectionstyle='arc3, rad = 0.1')
         plt.legend(self.dummyLines, self.labels)
-        plt.show()
+
+        if self.saveFig:
+            fname = 'temp/test_' + datetime.now().strftime("%Y%m%d_%I%M%S_%p") + '.png'
+            plt.savefig(fname)
+        if self.showDraw:
+            plt.show()
+        else:
+            plt.close()
         #plt.show(block=False)
                 
     # Process outgoing message into buffer to be read for each node i
@@ -99,6 +114,8 @@ class MsgForwarder(object):
                         print('MsgForwarder: New connection request detected and updated to matrix A[{}][{}]' \
                               .format(i, dictMsg['dest']) )
                         self.A[i][dictMsg['dest']] = 1
+                        self.AddedLink += [(i, dictMsg['dest'])]
+
                         # Add link addition counter only once per all addition
                         if not isLinkAdded:
                             isLinkAdded = True
@@ -108,24 +125,25 @@ class MsgForwarder(object):
                             selCol = self.colorList[temp]
                             selWeight = np.ceil(self.k / len(self.colorList))*2
                             # The variables will remains during this session
-                            
+                        
                             # Add variables for Legend Description
                             self.dummyLines.append(Line2D([0], [0], color=selCol, linewidth=selWeight))
                             self.labels.append('Added Edges #'+str(self.k))
-                        
-                        # Forward the message to the correct destination buffer 
-                        self.buffTo[dictMsg['dest']].append(dictMsg)
-                        
+                    
                         # Add information for drawing
                         self.G.add_edges_from([(dictMsg['sender'], dictMsg['dest'])],\
                                               color=selCol, weight=selWeight)
+
+                        # Forward the message to the correct destination buffer 
+                        self.buffTo[dictMsg['dest']].append(dictMsg)
+                        
                     
                     # Same Destination with msg_type RN >> Network Reconfiguration
                     elif (dictMsg['dest'] == i) and (dictMsg['msg_type'] == 'RN'):
-                        if self.reconfigure_A is not None:                            
+                        if self.reconfigure_A is not None:
                             # DRAW the previous network
                             self.drawCommNetwork()
-                                                        
+                                                    
                             # Initialize new drawing for the new network
                             self.A = self.original_A.copy()
                             self.init_drawCommNetwork()

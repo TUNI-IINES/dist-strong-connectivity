@@ -316,7 +316,7 @@ class NodeConn(object):
                         self.v_num, self.retrievedbcData ))
                     
                     self.est_sources = self.retrievedbcData
-                    if self.original_estSource is None:
+                    if (self.original_isSinkSCC) and (self.original_estSource is None):
                         self.original_estSource = self.est_sources
                     
         # Return the current state information towards out Neighbors
@@ -362,7 +362,7 @@ class NodeConn(object):
                 if len(nodes_outWeakConn) > 0:
                     # For weakly connected, all nodes are accessible to the last sink
                     # This procedure will not be processed
-                    selected_node = np.random.choice(self.nodes_outWeakConn) 
+                    selected_node = np.random.choice(nodes_outWeakConn) 
     
 
             # append selected source to out-neighbor
@@ -547,11 +547,14 @@ class NodeConn(object):
         newLinks += [{'sender':q[i], 'dest':q[i+1]} for i in range(len_q-1)]
         
         if len_v == len_w:
-            if len_q > 0:           
-                newLinks += [{'sender':w[p-1], 'dest':q[0]}]
-                newLinks += [{'sender':q[len_q-1], 'dest':v[0]}]
-            else:
-                newLinks += [{'sender':w[p-1], 'dest':v[0]}]                                
+            if len_v > 0: # assumed normal case
+                if len_q > 0:           
+                    newLinks += [{'sender':w[p-1], 'dest':q[0]}]
+                    newLinks += [{'sender':q[len_q-1], 'dest':v[0]}]
+                else:
+                    newLinks += [{'sender':w[p-1], 'dest':v[0]}]                                
+            else: # (special case) all disjoint are isolated-sccs 
+                newLinks += [{'sender':q[len_q-1], 'dest':q[0]}]
                 
         elif len_v < len_w:
             newLinks += [{'sender':w[p-1], 'dest':w[len_v]}]
@@ -676,7 +679,7 @@ class NodeConn(object):
                     minLinkNumber = max(len(self.listSource), len(self.listSink)) + len(self.listIsolated)
                     newLinks = []
                     if totalAddedLinks > minLinkNumber:
-                        print('Number of added link ({}) is NOT minimal ({})'.format(totalAddedLinks, minLinkNumber))
+                        print('Number of added link ({}) is NOT minimal ({}). Proposed links reconfiguration.'.format(totalAddedLinks, minLinkNumber))
                         newLinks = self.minLinkFormulation(suppressPrint)
                     else:
                         print('Number of added link is already minimal')
@@ -755,10 +758,9 @@ class NodeConn(object):
         return self.constructOutMsg()
         
 
-    def updateEnsureStrongConn_MinLink (self, buffTo):
+    def updateEnsureStrongConn_MinLink (self, buffTo, suppressPrint = True):
 
         outMsg = []
-        suppressPrint = True
         totalState = self.estimateSCCState + self.linkAddState + self.minLinkVerState
         self.currState = totalState[self.iterState]   
         
@@ -786,7 +788,7 @@ class NodeConn(object):
         elif any(item == self.currState for item in self.minLinkVerState) and (self.linkaddIter >= 0):
             # Keep Running updateLinkAdd_Weak until it finished
             # This process will automatically 
-            outMsg = self.minLinkGuarantee(buffTo, not suppressPrint)
+            outMsg = self.minLinkGuarantee(buffTo, suppressPrint)
 
             if not self.isRunning:
                 # End of all process
@@ -801,7 +803,9 @@ class NodeConn(object):
                     # Resend new information state
                     outMsg += self.constructOutMsg()
         
-                    self.linkaddIter = -1                
+                    self.linkaddIter = -1
+                    print('Node {} finished MinLink Reconfiguration in iterations {}. Graph should be strongly connected.'.format( \
+                        self.v_num, self.it ))
                     print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
                         self.v_num))
         
