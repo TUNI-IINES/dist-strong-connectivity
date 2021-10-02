@@ -171,6 +171,8 @@ class NodeConn(object):
                     status = '- Sink-SCC'
                 elif self.isSourceSCC:
                     status = '- Source-SCC'
+                elif self.isIsolatedSCC:
+                    status = '- Isolated-SCC'
                 elif self.isStronglyConnected: 
                     status = '- strongly connected graph'
 
@@ -279,9 +281,11 @@ class NodeConn(object):
                     out = ''
                     if self.isSCCrep:
                         if self.isSinkSCC:
-                            out = 'Selected as Sink'
+                            out = 'Selected as Sink representative'
                         elif self.isSourceSCC:
-                            out = 'Selected as Source'
+                            out = 'Selected as Source representative'
+                        elif self.isIsolatedSCC:
+                            out = 'Selected as Isolated representative'
                         else:
                             out = 'Weird exception, Selected as ???'
                     print('Node {}: from SCC {} communicating {}. {}'.format( \
@@ -772,14 +776,15 @@ class NodeConn(object):
             if not self.isRunning:
                 # The end of updateEnsureStrongConn
                 if self.isStronglyConnected :
-                    # Reset the isRunning Flag to continue with minimum link verification
-                    self.isRunning = True 
-    
-                    # Set the variable for Initialization to select SCC representative
-                    self.iterState = len(self.estimateSCCState + self.linkAddState)
-                    self.currState = totalState[self.iterState]
-                    self.initState()
-                    outMsg = self.constructOutMsg()
+                    if self.linkaddIter > 0: # no need to run if the graph is originally strongly connected
+                        # Reset the isRunning Flag to continue with minimum link verification
+                        self.isRunning = True 
+        
+                        # Set the variable for Initialization to Minimum Link Verification
+                        self.iterState = len(self.estimateSCCState + self.linkAddState)
+                        self.currState = totalState[self.iterState]
+                        self.initState()
+                        outMsg = self.constructOutMsg()
                 else:
                     # Already strongly connected
                     print('Node {} finished Algorithm 3 in iterations {}. Graph is NOT strongly connected ???.'.format( \
