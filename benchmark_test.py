@@ -14,8 +14,9 @@ from datetime import datetime
 # Admittance matrix to ease assigning for in-neighbor and out-neighbor
 # G = tg.graph1 # Strongly connected digraph with 8 nodes 
 # G = tg.graph2 # Weakly connected digraph with 10 nodes
-G = tg.graph3 # Disconnected digraph with 20 nodes
-#G = tg.graph4 # Disconnected digraph with 20 nodes
+# G = tg.graph3 # Disconnected digraph with 20 nodes
+# G = tg.graph4 # Disconnected digraph with 20 nodes
+G = tg.graph5 # Disconnected digraph with 50 nodes
 A = G['A']
 n = A.shape[0] # A should always be a square matrix
 
@@ -89,7 +90,7 @@ def single_run():
 
 def main():
     it = 0
-    total_it = n*n*n
+    total_it = n*n
     fname = 'temp/' + G['name'] + 'benchmark' + datetime.now().strftime("%Y%m%d_%H%M%S") + '.csv'
     csv_file = open(fname, mode='w')
     csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -129,7 +130,7 @@ def main():
         it += 1
         # Simple Progress Bar 
         print(".", end =" ")
-        if (it % n) == 0: print((it + datetime.now().strftime("%Y%m%d_%H%M%S")), flush=True)
+        if (it % n) == 0: print((str(it) + ' ' + datetime.now().strftime("%Y%m%d_%H%M%S")), flush=True)
         # increase iteration number
 
     print('Done')

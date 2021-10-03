@@ -10,17 +10,18 @@ import numpy as np
 # G = tg.graph2 # Weakly connected digraph with 10 nodes
 # G = tg.graph3 # Disconnected digraph with 20 nodes
 # G = tg.graph4 # Disconnected digraph with 20 nodes
+G = tg.graph5 # Disconnected digraph with 50 nodes
 
-# A = G['A']
-# n = A.shape[0] # A should always be a square matrix
+A = G['A']
+n = A.shape[0] # A should always be a square matrix
 
-# Random Graph
-n = 50 # number of nodes
-p = 1/n # probability of edge
-G = nx.gnp_random_graph(n, 1/n, directed=True)
-Amat = nx.adjacency_matrix(G).todense()
-A = np.squeeze(np.asarray(Amat))
-print(A)
+# # Random Graph
+# n = 50 # number of nodes
+# p = 1/n # probability of edge
+# G = nx.gnp_random_graph(n, 1/n, directed=True)
+# Amat = nx.adjacency_matrix(G).todense()
+# A = np.squeeze(np.asarray(Amat))
+# print(A)
 
 def main():    
     # Initialize message forwarder (simulate sending message from one node to the other)
