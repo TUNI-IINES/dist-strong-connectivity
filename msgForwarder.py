@@ -56,7 +56,7 @@ class MsgForwarder(object):
         plt.legend(self.dummyLines, self.labels)
 
         if self.saveFig:
-            fname = 'temp/test_' + datetime.now().strftime("%Y%m%d_%I%M%S_%p") + '.png'
+            fname = 'temp/test_' + datetime.now().strftime("%Y%m%d_%I%M%S_%p") + '.pdf'
             plt.savefig(fname)
         if self.showDraw:
             plt.show()

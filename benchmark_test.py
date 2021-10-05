@@ -91,7 +91,8 @@ def single_run():
 def main():
     it = 0
     total_it = n*n
-    fname = 'temp/' + G['name'] + 'benchmark' + datetime.now().strftime("%Y%m%d_%H%M%S") + '.csv'
+    testName = 'temp/' + G['name'] + 'benchmark' + datetime.now().strftime("%Y%m%d_%H%M%S")
+    fname = testName + '.csv'
     csv_file = open(fname, mode='w')
     csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
@@ -139,28 +140,54 @@ def main():
 
     csv_writer.writerow([Data])
     csv_writer.writerow([MaxIter, MaxAddedLink, ValMinLink])
-    plotData(Data)
+    plotData(Data, (testName + '.png') )
 
-def plotData(Data):
+def plotData(Data, fname = 'benchmarktest.png'):
+    plt.rcParams.update({'font.size': 14})
+    ax = plt.figure().gca()
+    ax.xaxis.get_major_locator().set_params(integer=True)
+    ax.yaxis.get_major_locator().set_params(integer=True)
+
     plt.scatter(Data[:,1],Data[:,0]/n,s=2*Data[:,2])
     for i, txt in enumerate(Data[:,2]):
         plt.annotate(txt, (Data[i,1],Data[i,0]/n))
 
-    plt.hlines(MaxIter/n, ValMinLink, MaxAddedLink)
-    plt.vlines(ValMinLink, MinIter/n, MaxIter/n)
-    plt.vlines(MaxAddedLink, MinIter/n, MaxIter/n)
+    nMinIter = MinIter/n
+    nMaxIter = MaxIter/n
 
-    vcenter = (MinIter + MaxIter)/(2*n)
+    xoffset = (MaxAddedLink - ValMinLink)/10
+    yoffset = (nMaxIter - nMinIter)/10
+
+    ax.set_xlim( [ ValMinLink-xoffset/2, MaxAddedLink+xoffset*3/2 ] )
+    ax.set_ylim( [ nMinIter-yoffset, nMaxIter+yoffset*3/2] )
+
+    plt.hlines(nMaxIter, ValMinLink, MaxAddedLink)
+    plt.vlines(ValMinLink, nMinIter, nMaxIter)
+    plt.vlines(MaxAddedLink, nMinIter, nMaxIter)
+
+    vcenter = (nMinIter + nMaxIter)/2
     xcenter = (ValMinLink + MaxAddedLink)/2
-    plt.text(ValMinLink+0.1, vcenter, "Optimal Number of Links", rotation=90, verticalalignment='center')
-    plt.text(MaxAddedLink+0.1, vcenter, "Theoretical Maximum Number of Augmented Links", rotation=90, verticalalignment='center')
-    plt.text(xcenter, MaxIter/n +0.1, "Theoretical Maximum number of iterations", horizontalalignment='center')
+    plt.text(ValMinLink + xoffset/4, vcenter, "Optimal Number of Links", rotation=90, verticalalignment='center')
+    plt.text(MaxAddedLink + xoffset/4, vcenter, "Theoretical Maximum Number", rotation=90, verticalalignment='center')
+    plt.text(MaxAddedLink + xoffset*3/4, vcenter, "of Augmented Links", rotation=90, verticalalignment='center')
+    plt.text(xcenter, nMaxIter+yoffset/2, "Theoretical Maximum number of iterations", horizontalalignment='center')
 
     plt.xlabel('Number of Augmented links')
     plt.ylabel('Number of iterations (times n)')
+
+
+    plt.savefig(fname)
     plt.show()
 
 def plotOnly():
+    
+    #testName = 'temp/graph2WCbenchmark20211001_132431'
+    #Data = np.array([
+    #    [160,   4,  46],
+    #    [140,   3,  54]
+    #])
+
+    #testName = 'temp/graph3DCbenchmark20211001_133201'
     #Data = np.array([
     #    [320,  12, 175],
     #    [320,  11, 163],
@@ -171,12 +198,28 @@ def plotOnly():
     #    [320,   9,   2],
     #    [420,  11,   1]
     #])
+
+    testName = 'temp/graph5DCbenchmark20211003_003438'
     Data = np.array([
-        [160,   4,  46],
-        [140,   3,  54]
+        [1050,   31,  821],
+        [1050,   32,  506],
+        [1050,   29,  239],
+        [1050,   30,  612],
+        [1050,   33,  133],
+        [1050,   34,   12],
+        [1050,   28,   43],
+        [ 800,   29,   45],
+        [ 800,   31,   20],
+        [ 800,   30,   39],
+        [ 800,   28,   17],
+        [ 800,   33,    1],
+        [ 800,   32,    4],
+        [1050,   27,    4],
+        [ 800,   27,    4]
     ])
-    plotData(Data)
+
+    plotData(Data, (testName + '.pdf') )
 
 if __name__ == '__main__':
-    main()
-    #plotOnly()
+    # main()
+    plotOnly()
