@@ -8,9 +8,9 @@ import numpy as np
 # Admittance matrix to ease assigning for in-neighbor and out-neighbor
 # G = tg.graph1 # Strongly connected digraph with 8 nodes 
 # G = tg.graph2 # Weakly connected digraph with 10 nodes
-# G = tg.graph3 # Disconnected digraph with 20 nodes
+G = tg.graph3 # Disconnected digraph with 20 nodes
 # G = tg.graph4 # Disconnected digraph with 20 nodes
-G = tg.graph5 # Disconnected digraph with 50 nodes
+#G = tg.graph5 # Disconnected digraph with 50 nodes
 
 A = G['A']
 n = A.shape[0] # A should always be a square matrix
