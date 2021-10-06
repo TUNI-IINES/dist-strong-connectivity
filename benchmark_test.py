@@ -23,7 +23,7 @@ n = A.shape[0] # A should always be a square matrix
 ValMinLink = max(G['sourceSccNum'], G['sinkSccNum']) + G['isolatedSccNum']
 MaxAddedLink = G['sourceSccNum'] + G['sinkSccNum'] + G['isolatedSccNum'] + G['disjointGraph']
 MaxIter = (11*n) + (5*n* math.ceil( 1 + math.log2(G['disjointGraph'] - G['isolatedSccNum']/2) ) )
-MinIter = (9*n) + (5*n) # assuming 2 step iteration without link reconfiguration
+MinIter = (11*n) + (5*n) # assuming 2 step iteration with minimum link verification
 
 # Function to fully suppress print output in terminal
 @contextmanager
@@ -73,7 +73,7 @@ def single_run():
         msg.processBuffer()
         
         outnode_it += 1
-        if outnode_it > 3*n*n:
+        if outnode_it > 20*n*n:
             anyRunning = False
             print('quitting the program, infinite loop. Current iterations: {}'.format(outnode_it))
 
@@ -92,11 +92,10 @@ def main():
     it = 0
     total_it = n*n
     testName = 'temp/' + G['name'] + 'benchmark' + datetime.now().strftime("%Y%m%d_%H%M%S")
-    fname = testName + '.csv'
-    csv_file = open(fname, mode='w')
+    csv_file = open( (testName + '.csv'), mode='w')
     csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
-    print('Testing algorithm for {} iterations and saving it into {}'.format(total_it,fname))
+    print('Testing algorithm for {} iterations and saving it into {}'.format(total_it,testName))
     while it < total_it:
         #if True:
         with suppress_stdout():
@@ -140,7 +139,7 @@ def main():
 
     csv_writer.writerow([Data])
     csv_writer.writerow([MaxIter, MaxAddedLink, ValMinLink])
-    plotData(Data, (testName + '.png') )
+    plotData(Data, (testName + '.pdf') )
 
 def plotData(Data, fname = 'benchmarktest.png'):
     plt.rcParams.update({'font.size': 14})
@@ -154,38 +153,44 @@ def plotData(Data, fname = 'benchmarktest.png'):
 
     nMinIter = MinIter/n
     nMaxIter = MaxIter/n
+    if nMinIter == nMaxIter:
+        nMinIter -= 1
+        nMaxIter += 1
 
     xoffset = (MaxAddedLink - ValMinLink)/10
     yoffset = (nMaxIter - nMinIter)/10
 
-    ax.set_xlim( [ ValMinLink-xoffset/2, MaxAddedLink+xoffset*3/2 ] )
-    ax.set_ylim( [ nMinIter-yoffset, nMaxIter+yoffset*3/2] )
+    ax.set_xlim( [ ValMinLink-xoffset*3/2, MaxAddedLink+xoffset*3/2 ] )
+    ax.set_ylim( [ nMinIter-yoffset, nMaxIter+yoffset*5/2 ] )
 
-    plt.hlines(nMaxIter, ValMinLink, MaxAddedLink)
+    plt.hlines(MaxIter/n, ValMinLink, MaxAddedLink)
     plt.vlines(ValMinLink, nMinIter, nMaxIter)
     plt.vlines(MaxAddedLink, nMinIter, nMaxIter)
 
     vcenter = (nMinIter + nMaxIter)/2
     xcenter = (ValMinLink + MaxAddedLink)/2
-    plt.text(ValMinLink + xoffset/4, vcenter, "Optimal Number of Links", rotation=90, verticalalignment='center')
-    plt.text(MaxAddedLink + xoffset/4, vcenter, "Theoretical Maximum Number", rotation=90, verticalalignment='center')
-    plt.text(MaxAddedLink + xoffset*3/4, vcenter, "of Augmented Links", rotation=90, verticalalignment='center')
-    plt.text(xcenter, nMaxIter+yoffset/2, "Theoretical Maximum number of iterations", horizontalalignment='center')
+
+    plt.text(ValMinLink - xoffset*3/4, vcenter, "Optimal Number of Links", rotation=90, verticalalignment='center', fontsize='smaller')
+
+    plt.text(MaxAddedLink + xoffset/4, vcenter, "Theoretical Maximum Number", rotation=90, verticalalignment='center', fontsize='smaller')
+    plt.text(MaxAddedLink + xoffset*3/4, vcenter, "of Augmented Links", rotation=90, verticalalignment='center', fontsize='smaller')
+
+    plt.text(xcenter + 2*xoffset, (MaxIter/n)+yoffset*3/2, "Theoretical Maximum", horizontalalignment='center', fontsize='smaller')
+    plt.text(xcenter + 2*xoffset, (MaxIter/n)+yoffset/2, "Number of Iterations", horizontalalignment='center', fontsize='smaller')
 
     plt.xlabel('Number of Augmented links')
     plt.ylabel('Number of iterations (times n)')
-
 
     plt.savefig(fname)
     plt.show()
 
 def plotOnly():
     
-    #testName = 'temp/graph2WCbenchmark20211001_132431'
-    #Data = np.array([
-    #    [160,   4,  46],
-    #    [140,   3,  54]
-    #])
+    testName = 'temp/graph2WCbenchmark20211001_132431'
+    Data = np.array([
+        [160,   4,  35],
+        [160,   3,  65]
+    ])
 
     #testName = 'temp/graph3DCbenchmark20211001_133201'
     #Data = np.array([
@@ -199,27 +204,27 @@ def plotOnly():
     #    [420,  11,   1]
     #])
 
-    testName = 'temp/graph5DCbenchmark20211003_003438'
-    Data = np.array([
-        [1050,   31,  821],
-        [1050,   32,  506],
-        [1050,   29,  239],
-        [1050,   30,  612],
-        [1050,   33,  133],
-        [1050,   34,   12],
-        [1050,   28,   43],
-        [ 800,   29,   45],
-        [ 800,   31,   20],
-        [ 800,   30,   39],
-        [ 800,   28,   17],
-        [ 800,   33,    1],
-        [ 800,   32,    4],
-        [1050,   27,    4],
-        [ 800,   27,    4]
-    ])
+    #testName = 'temp/graph5DCbenchmark20211003_003438'
+    #Data = np.array([
+    #    [1050,   31,  821],
+    #    [1050,   32,  506],
+    #    [1050,   29,  239],
+    #    [1050,   30,  612],
+    #    [1050,   33,  133],
+    #    [1050,   34,   12],
+    #    [1050,   28,   43],
+    #    [ 800,   29,   45],
+    #    [ 800,   31,   20],
+    #    [ 800,   30,   39],
+    #    [ 800,   28,   17],
+    #    [ 800,   33,    1],
+    #    [ 800,   32,    4],
+    #    [1050,   27,    4],
+    #    [ 800,   27,    4]
+    #])
 
     plotData(Data, (testName + '.pdf') )
 
 if __name__ == '__main__':
-    # main()
-    plotOnly()
+    main()
+    #plotOnly()

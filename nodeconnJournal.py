@@ -797,22 +797,26 @@ class NodeConn(object):
 
             if not self.isRunning:
                 # End of all process
+                # Reset Algorithm for next link verification
+                self.initializeNewProcedure() 
+
                 if self.isAddedLinkOptimal :
-                    outMsg = []
-                    # No need for additional verification
+                    print('Node {} finished MinLink Verification in iterations {}. No configuration.'.format( \
+                        self.v_num, self.it ))
+
                 else:
-                    # Reset Algorithm for next link verification
-                    self.initializeNewProcedure() 
                     # Resend new message to message forwarder about new network config
                     outMsg = [{'sender':self.v_num, 'dest':self.v_num, 'msg_type':'RN', 'msg':''}]
-                    # Resend new information state
-                    outMsg += self.constructOutMsg()
-        
-                    self.linkaddIter = -1
+
                     print('Node {} finished MinLink Reconfiguration in iterations {}. Graph should be strongly connected.'.format( \
                         self.v_num, self.it ))
-                    print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
-                        self.v_num))
+
+                # Resend new information state
+                outMsg += self.constructOutMsg()
+                # DO Verification, regardless of optimal link or not
+                self.linkaddIter = -1
+                print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
+                    self.v_num))
         
         elif (self.linkaddIter == -1):
             # Running Verification to Show that the resulting graph is strongly connected
