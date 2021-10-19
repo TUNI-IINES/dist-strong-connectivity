@@ -184,47 +184,6 @@ def plotData(Data, fname = 'benchmarktest.png'):
     plt.savefig(fname)
     plt.show()
 
-def plotOnly():
-    
-    testName = 'temp/graph2WCbenchmark20211001_132431'
-    Data = np.array([
-        [160,   4,  35],
-        [160,   3,  65]
-    ])
-
-    #testName = 'temp/graph3DCbenchmark20211001_133201'
-    #Data = np.array([
-    #    [320,  12, 175],
-    #    [320,  11, 163],
-    #    [420,  12,   4],
-    #    [320,  10,  26],
-    #    [320,  13,  27],
-    #    [420,  13,   2],
-    #    [320,   9,   2],
-    #    [420,  11,   1]
-    #])
-
-    #testName = 'temp/graph5DCbenchmark20211003_003438'
-    #Data = np.array([
-    #    [1050,   31,  821],
-    #    [1050,   32,  506],
-    #    [1050,   29,  239],
-    #    [1050,   30,  612],
-    #    [1050,   33,  133],
-    #    [1050,   34,   12],
-    #    [1050,   28,   43],
-    #    [ 800,   29,   45],
-    #    [ 800,   31,   20],
-    #    [ 800,   30,   39],
-    #    [ 800,   28,   17],
-    #    [ 800,   33,    1],
-    #    [ 800,   32,    4],
-    #    [1050,   27,    4],
-    #    [ 800,   27,    4]
-    #])
-
-    plotData(Data, (testName + '.pdf') )
-
 if __name__ == '__main__':
     main()
-    #plotOnly()
+
