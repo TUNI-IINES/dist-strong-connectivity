@@ -63,7 +63,7 @@ def plotData(Data, fname = 'benchmarktest.png',
             arrowprops=dict(facecolor='black', shrink=0.03) ) 
 
     plt.xlabel('Number of Augmented links')
-    plt.ylabel('Number of iterations (times n)')
+    plt.ylabel('Number of Time Steps (times n)')
 
     plt.savefig(fname)
     #plt.show()

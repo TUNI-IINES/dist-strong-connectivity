@@ -179,7 +179,7 @@ def plotData(Data, fname = 'benchmarktest.png'):
     plt.text(xcenter + 2*xoffset, (MaxIter/n)+yoffset/2, "Number of Iterations", horizontalalignment='center', fontsize='smaller')
 
     plt.xlabel('Number of Augmented links')
-    plt.ylabel('Number of iterations (times n)')
+    plt.ylabel('Number of Time Steps (times n)')
 
     plt.savefig(fname)
     plt.show()
