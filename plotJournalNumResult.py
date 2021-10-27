@@ -46,12 +46,8 @@ def plotData(Data, fname = 'benchmarktest.png',
         ax.yaxis.set_ticks(np.arange(math.ceil(ylimMin), math.ceil(ylimMax), 1.0))
     #plt.grid()
 
-    vcenter = (nMinIter + nMaxIter)/2
-    xcenter = (ValMinLink + MaxAddedLink)/2
-
     plt.text(ValMinLink - xoffset*5/4, ylimMin + 3*yoffset, "Optimal \nNumber \nof Links", rotation=0, verticalalignment='center', fontsize='smaller')
     plt.text(MaxAddedLink + xoffset/4, ylimMin + yoffset*11/4, "Theoretical \nMaximum \nNumber of \nAugmented \nLinks", rotation=0, verticalalignment='center', fontsize='smaller')
-
     plt.annotate('', 
             xy=(ValMinLink, ylimMin), xytext=(ValMinLink - xoffset*2/4, ylimMin + 2*yoffset),
             arrowprops=dict(facecolor='black', shrink=0.03) ) 
@@ -64,6 +60,12 @@ def plotData(Data, fname = 'benchmarktest.png',
 
     plt.xlabel('Number of Augmented links')
     plt.ylabel('Number of Time Steps (times n)')
+
+    ax.hlines(y=16, xmin=ValMinLink, xmax=MaxAddedLink, linewidth=1, linestyles='--', color='r')
+    plt.text(MaxAddedLink - xoffset*5/4, 16 + yoffset/4, "m=2", rotation=0, verticalalignment='center', fontsize='smaller', color='r')
+    if any(Data[:,0] > 16):
+        ax.hlines(y=21, xmin=ValMinLink, xmax=MaxAddedLink, linewidth=1, linestyles='--', color='r')
+        plt.text(MaxAddedLink - xoffset*5/4, 21 + yoffset/4, "m=3", rotation=0, verticalalignment='center', fontsize='smaller', color='r')
 
     plt.savefig(fname)
     #plt.show()
