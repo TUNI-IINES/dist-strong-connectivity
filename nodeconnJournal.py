@@ -36,6 +36,8 @@ class NodeConn(object):
         self.list_newOutNeigh = []
         self.list_newInNeigh = []
 
+        print(str(v_num), end='_', flush=True)
+
 
     # To allow running several procedure in series without resetting iteration number
     def initializeNewProcedure(self):

@@ -23,7 +23,7 @@ class MsgForwarder(object):
         self.buffFrom = [ [] for _ in range(self.n) ]
         self.buffTo = [ [] for _ in range(self.n) ]
                     
-        self.init_drawCommNetwork()
+        #self.init_drawCommNetwork()
         self.k = 0 # Counter for link addition
 
         self.AddedLink = []
@@ -41,8 +41,9 @@ class MsgForwarder(object):
         self.G = nx.MultiDiGraph()
         self.G.add_edges_from(edges, color='k',weight=1)
         # self.Gpos = nx.circular_layout(self.G)
-        # self.Gpos = nx.kamada_kawai_layout(self.G)
-        self.Gpos = nx.nx_pydot.graphviz_layout(self.G)
+        self.Gpos = nx.kamada_kawai_layout(self.G)
+        # self.Gpos = nx.nx_pydot.graphviz_layout(self.G) # somehow cause error
+        # self.Gpos = nx.nx_agraph.pygraphviz_layout(self.G) # require pygraphviz 
         
         self.colorList = ['r','g','b','c','m','y']
         self.dummyLines = [Line2D([0], [0], color='k', linewidth=1)]
