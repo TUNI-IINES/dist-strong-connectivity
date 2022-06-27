@@ -679,7 +679,10 @@ class NodeConn(object):
                     
                     print('Node {} Processing received data'.format(self.v_num))
                     print(' - totalAddedLinks: {}'.format(totalAddedLinks))
-                    print(' - Sources: {}, Sinks: {}, Isolateds: {}'.format(self.listSource, self.listSink, self.listIsolated))
+                    print(' - Sources ({}): {}, Sinks ({}): {}, Isolateds ({}): {}'.format(
+                        len(self.listSource), self.listSource,
+                        len(self.listSink), self.listSink, 
+                        len(self.listIsolated), self.listIsolated))
                     print(' - pairSinkSource: {}'.format(self.pairSinkSource))
                 
                     minLinkNumber = max(len(self.listSource), len(self.listSink)) + len(self.listIsolated)

@@ -23,7 +23,7 @@ class MsgForwarder(object):
         self.buffFrom = [ [] for _ in range(self.n) ]
         self.buffTo = [ [] for _ in range(self.n) ]
                     
-        #self.init_drawCommNetwork()
+        self.init_drawCommNetwork()
         self.k = 0 # Counter for link addition
 
         self.AddedLink = []
@@ -35,15 +35,19 @@ class MsgForwarder(object):
     def init_drawCommNetwork(self):
         # Draw the network
         # Adding Identity to force display of individual isolated node
-        A = self.A + np.eye(self.n) 
+        A = self.A #+ np.eye(self.n) 
         rows, cols = np.where(A == 1)
         edges = zip(rows.tolist(), cols.tolist())
-        self.G = nx.MultiDiGraph()
+        #self.G = nx.MultiDiGraph()
+        self.G = nx.from_numpy_array(np.zeros((self.n,self.n)), create_using=nx.MultiDiGraph)        
         self.G.add_edges_from(edges, color='k',weight=1)
+        #self.G.remove_edges_from(nx.selfloop_edges(self.G))
+        #self.G.add_edges_from(edges)
         # self.Gpos = nx.circular_layout(self.G)
-        self.Gpos = nx.kamada_kawai_layout(self.G)
+        #self.Gpos = nx.kamada_kawai_layout(self.G)
         # self.Gpos = nx.nx_pydot.graphviz_layout(self.G) # somehow cause error
-        # self.Gpos = nx.nx_agraph.pygraphviz_layout(self.G) # require pygraphviz 
+        #self.G = nx.from_numpy_array(self.A, create_using=nx.MultiDiGraph)        
+        self.Gpos = nx.nx_agraph.pygraphviz_layout(self.G) # require pygraphviz 
         
         self.colorList = ['r','g','b','c','m','y']
         self.dummyLines = [Line2D([0], [0], color='k', linewidth=1)]
@@ -52,13 +56,24 @@ class MsgForwarder(object):
     def drawCommNetwork(self):
         colors = nx.get_edge_attributes(self.G,'color').values()
         weights = nx.get_edge_attributes(self.G,'weight').values()
+        #nx.draw(self.G, self.Gpos, edge_color=colors, width=list(weights),\
+        #        with_labels=True, connectionstyle='arc3, rad = 0.1')
         nx.draw(self.G, self.Gpos, edge_color=colors, width=list(weights),\
-                with_labels=True, connectionstyle='arc3, rad = 0.1')
+                connectionstyle='arc3, rad = 0.1', node_size=10)
         plt.legend(self.dummyLines, self.labels)
 
         if self.saveFig:
-            fname = 'temp/test_' + datetime.now().strftime("%Y%m%d_%I%M%S_%p") + '.pdf'
-            plt.savefig(fname)
+            fname = 'temp/test_' + datetime.now().strftime("%Y%m%d_%I%M%S_%p") 
+            plt.savefig(fname+'.pdf')
+
+            import pickle
+            with open(fname+'.pkl', 'wb') as f: 
+                pickle.dump([
+                    self.n, self.original_A, self.A, 
+                    self.G, self.Gpos, 
+                    self.dummyLines, self.labels
+                    ], f)
+
         if self.showDraw:
             plt.show()
         else:

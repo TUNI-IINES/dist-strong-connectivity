@@ -4,26 +4,33 @@ from msgForwarder import MsgForwarder
 from nodeconnJournal import NodeConn
 import networkx as nx
 import numpy as np
+import pickle
 
 # Admittance matrix to ease assigning for in-neighbor and out-neighbor
-# G = tg.graph1 # Strongly connected digraph with 8 nodes 
+#G = tg.graph1 # Strongly connected digraph with 8 nodes 
 # G = tg.graph2 # Weakly connected digraph with 10 nodes
-# G = tg.graph3 # Disconnected digraph with 20 nodes
-# G = tg.graph4 # Disconnected digraph with 20 nodes
+#G = tg.graph3 # Disconnected digraph with 20 nodes
+#G = tg.graph4 # Disconnected digraph with 20 nodes
 #G = tg.graph5 # Disconnected digraph with 50 nodes
 
-# A = G['A']
-# n = A.shape[0] # A should always be a square matrix
+#A = G['A']
+#n = A.shape[0] # A should always be a square matrix
 
-# Random Graph
-n = 10000 # number of nodes
-p = 1/n # probability of edge
-print('Generating graph for ' + str(n) + ' nodes ...')
-G = nx.gnp_random_graph(n, 1/n, directed=True)
-# Amat = nx.adjacency_matrix(G).todense()
-# A = np.squeeze(np.asarray(Amat))
-A = nx.to_numpy_array(G)
-# print(A)
+# # Random Graph
+# n = 200 # number of nodes
+# p = 1/n # probability of edge
+# print('Generating graph for ' + str(n) + ' nodes ...')
+# G = nx.gnp_random_graph(n, 1/n, directed=True)
+# # Amat = nx.adjacency_matrix(G).todense()
+# # A = np.squeeze(np.asarray(Amat))
+# A = nx.to_numpy_array(G)
+# # print(A)
+
+#n=200 # sources:46, sinks:40, isolated:34
+n=1000 
+fname = 'misc/generatedA_'+str(n)
+with open(fname+'.pkl', 'rb') as f: 
+    n, G, A = pickle.load(f)
 
 
 
@@ -32,7 +39,7 @@ def main():
     # msg = MsgForwarder(A)
     print('Start main function.')
 
-    msg = MsgForwarder(A, showDraw = False, saveFig = False)
+    msg = MsgForwarder(A, showDraw = False, saveFig = True)
     # msg.drawCommNetwork() # draw original graph
     # Initialize a list of NodeConn objects
     Node = [NodeConn(i, n, A[:,i], A[i]) for i in range(n)]
