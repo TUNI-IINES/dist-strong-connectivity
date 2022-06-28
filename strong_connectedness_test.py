@@ -27,7 +27,7 @@ import pickle
 # # print(A)
 
 #n=200 # sources:46, sinks:40, isolated:34
-n=1000 
+n=1000
 fname = 'misc/generatedA_'+str(n)
 with open(fname+'.pkl', 'rb') as f: 
     n, G, A = pickle.load(f)
