@@ -10,20 +10,38 @@ from contextlib import contextmanager
 import sys, os
 import csv
 from datetime import datetime
+import pickle
 
 # Admittance matrix to ease assigning for in-neighbor and out-neighbor
 # G = tg.graph1 # Strongly connected digraph with 8 nodes 
-# G = tg.graph2 # Weakly connected digraph with 10 nodes
-# G = tg.graph3 # Disconnected digraph with 20 nodes
-# G = tg.graph4 # Disconnected digraph with 20 nodes
-G = tg.graph5 # Disconnected digraph with 50 nodes
-A = G['A']
-n = A.shape[0] # A should always be a square matrix
+# G = tg.graph2 # Weakly connected digraph with 10 nodes, distinct pair source-sink are 5
+#G = tg.graph3 # Disconnected digraph with 20 nodes, distinct pair source-sink are 6
+#G = tg.graph4 # Disconnected digraph with 20 nodes
+# G = tg.graph5 # Disconnected digraph with 50 nodes, distinct pair source-sink are 34
+# A = G['A']
+# n = A.shape[0] # A should always be a square matrix
 
-ValMinLink = max(G['sourceSccNum'], G['sinkSccNum']) + G['isolatedSccNum']
-MaxAddedLink = G['sourceSccNum'] + G['sinkSccNum'] + G['isolatedSccNum'] + G['disjointGraph']
-MaxIter = (11*n) + (5*n* math.ceil( 1 + math.log2(G['disjointGraph'] - G['isolatedSccNum']/2) ) )
-MinIter = (11*n) + (5*n) # assuming 2 step iteration with minimum link verification
+# ValMinLink = max(G['sourceSccNum'], G['sinkSccNum']) + G['isolatedSccNum']
+# MaxAddedLink = 4*G['disjointGraph'] + 34
+# MaxIter = (6*n) + (10*n* math.ceil( math.log2(G['disjointGraph']) ) )
+# MinIter = (6*n) + (5*n) # assuming 1 step iteration with minimum link verification
+
+
+# 50 --> # sources:13, sinks:15, isolated:8, disjoint:11, distinct pair source-sink are 28
+# 200 --> distinct pair source-sink are 167
+n= 50
+# n=200 # sources:46, sinks:40, isolated:34
+# n=1000
+fname = 'misc/generatedA_'+str(n)
+with open(fname+'.pkl', 'rb') as f: 
+    n, G, A = pickle.load(f)
+
+ValMinLink = max(13, 15) + 8
+MaxAddedLink = 4*11 + 28
+MaxIter = (6*n) + (10*n* math.ceil( math.log2(11) ) )
+MinIter = (6*n) + (5*n) # assuming 1 step iteration with minimum link verification
+G = {}
+G['name'] = 'test50'
 
 # Function to fully suppress print output in terminal
 @contextmanager
@@ -98,11 +116,11 @@ def main():
     print('Testing algorithm for {} iterations and saving it into {}'.format(total_it,testName))
     while it < total_it:
         #if True:
+
         with suppress_stdout():
             iterNum, addedLink, minLink = single_run()
             csv_writer.writerow([iterNum, len(addedLink), addedLink, len(minLink), minLink])
-            #print('Single run data: iter {}, added {} --> {}'.format(iterNum, addedLink, minLink))
-
+        # print('Single run data {}: iter {}, added {} --> {}'.format(it, iterNum, addedLink, minLink))
 
         NumMinLink = len(minLink)
         NumAddedLink = len(addedLink)        
@@ -129,7 +147,7 @@ def main():
 
         it += 1
         # Simple Progress Bar 
-        print(".", end =" ")
+        print(".", end =" ", flush=True)
         if (it % n) == 0: print((str(it) + ' ' + datetime.now().strftime("%Y%m%d_%H%M%S")), flush=True)
         # increase iteration number
 

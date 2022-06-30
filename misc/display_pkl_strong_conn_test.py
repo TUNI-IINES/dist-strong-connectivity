@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 #fname = 'temp/test_20220627_022420_PM' # 200 nodes Iterative Link
-fname = 'temp/test_20220627_023609_PM' # 200 nodes Minimum Link
+# fname = 'temp/test_20220627_023609_PM' # 200 nodes Minimum Link
+fname = 'temp/test_20220630_040953_PM' # 50 nodes Iterative Link
 SHOW_ORIGINAL_GRAPH = True
 SHOW_MODIFIED = True
 

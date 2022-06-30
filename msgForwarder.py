@@ -56,10 +56,10 @@ class MsgForwarder(object):
     def drawCommNetwork(self):
         colors = nx.get_edge_attributes(self.G,'color').values()
         weights = nx.get_edge_attributes(self.G,'weight').values()
-        #nx.draw(self.G, self.Gpos, edge_color=colors, width=list(weights),\
-        #        with_labels=True, connectionstyle='arc3, rad = 0.1')
         nx.draw(self.G, self.Gpos, edge_color=colors, width=list(weights),\
-                connectionstyle='arc3, rad = 0.1', node_size=10)
+               with_labels=True, connectionstyle='arc3, rad = 0.1')
+        # nx.draw(self.G, self.Gpos, edge_color=colors, width=list(weights),\
+        #         connectionstyle='arc3, rad = 0.1', node_size=10)
         plt.legend(self.dummyLines, self.labels)
 
         if self.saveFig:

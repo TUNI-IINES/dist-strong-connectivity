@@ -354,22 +354,28 @@ class NodeConn(object):
             # this node is representative node of sink-scc
             # Estimate the sources set is retrieved from broadcast data
             
-            selected_source = []
-            selected_node = None
-            if it_mode == 0 : # each sink to a single source
-                selected_source = [ np.random.choice(self.est_sources) ]
+            # COMMENTED DUE TO CHANGES DURING REVISION
+            # ---------------------------------------------------------
+            # selected_source = []
+            # selected_node = None
+
+            # if it_mode == 0 : # each sink to a single source
+            #     selected_source = [ np.random.choice(self.est_sources) ]
                         
-            elif it_mode > 0 : # single sink to all accessible sources
-                selected_source = self.est_sources
+            # elif it_mode > 0 : # single sink to all accessible sources
+            #     selected_source = self.est_sources
                 
-                # Reach out to non accessible nodes
-                temp = np.array(self.x)
-                nodes_outWeakConn = np.where(temp == 0)[0]
-                if len(nodes_outWeakConn) > 0:
-                    # For weakly connected, all nodes are accessible to the last sink
-                    # This procedure will not be processed
-                    selected_node = np.random.choice(nodes_outWeakConn) 
+            #     # Reach out to non accessible nodes
+            #     temp = np.array(self.x)
+            #     nodes_outWeakConn = np.where(temp == 0)[0]
+            #     if len(nodes_outWeakConn) > 0:
+            #         # For weakly connected, all nodes are accessible to the last sink
+            #         # This procedure will not be processed
+            #         selected_node = np.random.choice(nodes_outWeakConn) 
+            # ---------------------------------------------------------
     
+            # single sink to all accessible sources
+            selected_source = self.est_sources # ADDED DUE TO REVISION
 
             # append selected source to out-neighbor
             self.out_neigh = np.append(self.out_neigh, selected_source)
@@ -383,16 +389,19 @@ class NodeConn(object):
                 request_edge += [{'sender':self.v_num, 'dest':source, \
                     'msg_type':self.linkAddReq, 'msg':''}]
                     
-            if selected_node is not None:
-                self.out_neigh = np.append(self.out_neigh, selected_node)
-                self.list_newOutNeigh += [selected_node]
+            # COMMENTED DUE TO CHANGES DURING REVISION
+            # ---------------------------------------------------------
+            # if selected_node is not None:
+            #     self.out_neigh = np.append(self.out_neigh, selected_node)
+            #     self.list_newOutNeigh += [selected_node]
 
-                print('Node {}: Reaching out, sending requested new edge to node {}. Out-neighbor {}'\
-                    .format(self.v_num, source, self.out_neigh))
+            #     print('Node {}: Reaching out, sending requested new edge to node {}. Out-neighbor {}'\
+            #         .format(self.v_num, source, self.out_neigh))
     
-                # link addition sending request message to selected source
-                request_edge += [{'sender':self.v_num, 'dest':selected_node, \
-                    'msg_type':self.linkAddReq, 'msg':''}]
+            #     # link addition sending request message to selected source
+            #     request_edge += [{'sender':self.v_num, 'dest':selected_node, \
+            #         'msg_type':self.linkAddReq, 'msg':''}]
+            # ---------------------------------------------------------
 
         
         if not suppressPrint:
@@ -441,19 +450,34 @@ class NodeConn(object):
                 self.initializeNewProcedure() # Only reset state x at this point
                 # Resend new information state
                 outMsg = request_edge + self.constructOutMsg()
-    
-                self.linkaddIter += 1
-                if self.linkaddIter == 2: # already through 2 link additions
-                    # The main algorithm ends here
-                    # In essence, we need additional 1 iteration
-                    # to process this requested messages on the other side
-                    # Here, we will do it while doing verification
-                    self.linkaddIter = -1
+
+                # only run once --> MODIFIED DURING REVISION
+                # The main algorithm ends here
+                # In essence, we need additional 1 iteration
+                # to process this requested messages on the other side
+                # Here, we will do it while doing verification
+                self.linkaddIter = -1
+                print('Node {} finished Algorithm 3 in iterations {}. Graph should be strongly connected.'.format( \
+                    self.v_num, self.it ))
+                print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
+                    self.v_num))
+
+
+                # COMMENTED DUE TO CHANGES DURING REVISION
+                # ---------------------------------------------------------
+                # self.linkaddIter += 1
+                # if self.linkaddIter == 2: # already through 2 link additions
+                #     # The main algorithm ends here
+                #     # In essence, we need additional 1 iteration
+                #     # to process this requested messages on the other side
+                #     # Here, we will do it while doing verification
+                #     self.linkaddIter = -1
                 
-                    print('Node {} finished Algorithm 3 in iterations {}. Graph should be strongly connected.'.format( \
-                        self.v_num, self.it ))
-                    print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
-                        self.v_num))
+                #     print('Node {} finished Algorithm 3 in iterations {}. Graph should be strongly connected.'.format( \
+                #         self.v_num, self.it ))
+                #     print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
+                #         self.v_num))
+                # ---------------------------------------------------------
         
         elif (self.linkaddIter == -1):
             # Running Verification to Show that the resulting graph is strongly connected
