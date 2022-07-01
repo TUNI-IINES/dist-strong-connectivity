@@ -40,7 +40,7 @@ class MsgForwarder(object):
         edges = zip(rows.tolist(), cols.tolist())
         #self.G = nx.MultiDiGraph()
         self.G = nx.from_numpy_array(np.zeros((self.n,self.n)), create_using=nx.MultiDiGraph)        
-        self.G.add_edges_from(edges, color='k',weight=1)
+        self.G.add_edges_from(edges, color='black', weight=1)
         #self.G.remove_edges_from(nx.selfloop_edges(self.G))
         #self.G.add_edges_from(edges)
         # self.Gpos = nx.circular_layout(self.G)
