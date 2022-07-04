@@ -10,7 +10,7 @@ class MsgForwarder(object):
     The message is a dictionary constructed in NodeConn Object
     consisting of: sender, dest, msgType, and msg
     """
-    def __init__(self, A, showDraw = True, saveFig = False):
+    def __init__(self, A, showDraw = True, saveFig = False, show_step= True):
         super(MsgForwarder, self).__init__()
         self.A = A.copy()
         self.original_A = A.copy()
@@ -30,6 +30,8 @@ class MsgForwarder(object):
         self.reconfigure_A = None
         self.reconfigure_newEdges = []
         self.recorded_reconfigure = []
+
+        self.is_print = show_step
 
     # Visualize the network
     def init_drawCommNetwork(self):
@@ -97,8 +99,8 @@ class MsgForwarder(object):
         for i in range(self.n):
             for dictMsg in self.buffFrom[i]:
                 # Error Trap
-                if dictMsg['sender'] != i:
-                    print('MsgForwarder: unusual package: from {} with id {}. Should be the same' \
+                if dictMsg['sender'] != i: raise AssertionError(
+                    'MsgForwarder: unusual package: from {} with id {}. Should be the same' \
                         .format(i, dictMsg['sender']))
                 
                 # Check whether it is listed in Adjacency matrix
@@ -119,16 +121,18 @@ class MsgForwarder(object):
                                 for link in ReconfigureLink['links']:
                                     self.reconfigure_A[link['sender']][link['dest']] = 1
                                     self.reconfigure_newEdges += [(link['sender'], link['dest'])]
-                                    
-                                print('MsgForwarder: Detecting Reconfiguration package, saved.')
+                                
+                                if self.is_print:
+                                    print('MsgForwarder: Detecting Reconfiguration package, saved.')
 
 
                 else:
                     # Draw additional edges, when the requested edge passed
                     if (dictMsg['msg_type'] == 'la'):
                         # update into adjacency matrix
-                        print('MsgForwarder: New connection request detected and updated to matrix A[{}][{}]' \
-                              .format(i, dictMsg['dest']) )
+                        if self.is_print:
+                            print('MsgForwarder: New connection request detected and updated to matrix A[{}][{}]' \
+                                  .format(i, dictMsg['dest']) )
                         self.A[i][dictMsg['dest']] = 1
                         self.AddedLink += [(i, dictMsg['dest'])]
 
@@ -179,9 +183,10 @@ class MsgForwarder(object):
                             # Reconfigure New Network
                             self.A = self.reconfigure_A.copy()
                             self.reconfigure_A = None # to skip next similar message
-                            print('MsgForwarder: Activating past recorded Reconfiguration Network.')
+                            if self.is_print:
+                                print('MsgForwarder: Activating past recorded Reconfiguration Network.')
 
-                    else:
+                    else: 
                         print('MsgForwarder: Deleting unauthorized message from {} to {}: {} {}' \
                               .format(i, dictMsg['dest'], dictMsg['msg_type'], dictMsg['msg']) )
 

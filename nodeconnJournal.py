@@ -18,15 +18,30 @@ class NodeConn(object):
         # array of out-neighbours
         self.out_neigh = np.where(out_LapRow == 1)[0]
         
-        # State for proceeding with the algorithms        
-        self.startingState = 'x'
-        self.linkAddReq = 'la'
+        # State for proceeding with the algorithms  
+        # -------------------------------------------------------------      
+        self.startingState = 'x' # path estimation
 
-        self.verificationState = [self.startingState, 'f']
-        self.estimateSCCState = [self.startingState, 'c', 'o' ]
+        # ALGORITHM 1 - VERIFICATION OF STRONG COONECTIVITY 
+        # path estimation + strongly connected verification
+        self.verificationState = [self.startingState, 'f'] 
+
+        # ALGORITHM 3 - ESTIMATION OF STRONGLY CONNECTED COMPONENTS
+        # path estimation + SCC member estimation + characterize SCC
+        self.estimateSCCState = [self.startingState, 'c', 'o' ] 
+
+        # ALGORITHM 4 or 5 - LINK ADDITION
+        # Algorithm 3 + select representative + broadcast information
+        # --> may be repeated several time
         self.linkAddState = ['rep', 'bc']
+        self.linkAddReq = 'la' # link addition
+
+        # ALGORITHM 6 and 7 - ENFORCING MINIMUM LINK
+        # Algorithm 4 or 5 + select representative + broadcast information 
+        # + broadcast minimum link result
         self.minLinkVerState = ['repL', 'bcS', 'bcR']
 
+        # Reset the states
         self.initializeNewProcedure()
         
         # unassigned Variables
@@ -36,7 +51,7 @@ class NodeConn(object):
         self.list_newOutNeigh = []
         self.list_newInNeigh = []
 
-        print(str(v_num), end='_', flush=True)
+        # print(str(v_num), end='_', flush=True)
 
 
     # To allow running several procedure in series without resetting iteration number
@@ -51,56 +66,59 @@ class NodeConn(object):
     #     Problem 1: Verify in a distributed manner if the directed graph 
     #                is strongly connected
     # -------------------------------------------------------------------------------
-    def updateVerifyStrongConn (self, buffTo):
-
+    # When (show_step == False), the result can be checked by inspecting self.f
+    # Namely, 
+    #   self.f == 0 --> The graph is strongly connected
+    #   self.f == 1 --> The graph is NOT strongly connected
+    # 
+    def updateVerifyStrongConn (self, buffTo, show_step = True):
         # Process the incoming messages
         for dictMsg in buffTo:
             # Check message information
-            if self.isValidMsg(dictMsg):
-                # process message information
+            if self.isValidMsg(dictMsg, show_step):
+                # process message information - maximum consensus algorithm
                 if self.currState == self.verificationState[0]: 
-                    # Update each element of x
                     self.x = [max(val) for val in zip(self.x, dictMsg['msg'])]
                     
                 elif self.currState == self.verificationState[1]: 
-                    # Update information of f
                     self.f = max(self.f, dictMsg['msg'])
                 
-                else:
-                    print('Node {}: Unusual currState {}'.format(self.v_num, self.currState))
-
-            else:
+                else: # unexpected state
+                    raise AssertionError(
+                        'Node {}: Unusual currState {}'.format(self.v_num, self.currState) )
+            else: # NOT THE EXPECTED MESSAGE during this state
                 if not (dictMsg['msg_type'] == self.linkAddReq): 
-                    print('Node {} inValidMsg: {}'.format(self.v_num, dictMsg))
-                    print('Node {} expecting {} from {}'.format(self.v_num, self.currState, self.in_neigh))
+                    raise AssertionError(
+                        'Node {} inValidMsg: {}. Expecting {} from {}'.format(
+                            self.v_num, dictMsg, self.currState, self.in_neigh) )
+                # ELSE --> pass message as new link is already added during isValidMsg()
 
         self.it += 1
-        # Procedure to check for switching between Verification State
+        # Procedure to check for switching between States
         if self.it % self.n == 0:
             # increment the current state
             self.iterState += 1
 
             if self.iterState >= len(self.verificationState):
-
                 # Prohibit to run in the next turn
                 self.isRunning = False
-                print('Node {} finished Algorithm 1 in iterations in iterations {}'.format( \
-                    self.v_num, self.it ))
+                if show_step:
+                    print('Node {} finished Algorithm 1 in iterations {}'.format( \
+                        self.v_num, self.it ))
 
                 # Show the Final Verification Status
                 final_status = 'IS'
                 if self.f == 1:
                     final_status = 'is NOT'
-                print('Node {}: The communication graph {} strongly connected'.format( \
-                    self.v_num, final_status ))
+                if show_step:
+                    print('Node {}: The communication graph {} strongly connected'.format( \
+                        self.v_num, final_status ))
 
             else: 
                 # Set into the new self.currState
                 self.currState = self.verificationState[self.iterState]
-
                 # Initialize the new state
                 self.initState()
-
 
         # Return the current state information towards out Neighbors
         return self.constructOutMsg()
@@ -110,38 +128,45 @@ class NodeConn(object):
 
 
     # -------------------------------------------------------------------------------
-    # Main Procedure for Algorithm 2: Distributed Estimation of SCC (Journal Version)
+    # Main Procedure for Algorithm 3: Distributed Estimation of SCC (Journal Version)
     # -------------------------------------------------------------------------------
-    def updateEstimateSCC (self, buffTo, suppressPrint = True):
+    # When (show_step == False), the result can be checked by inspecting: 
+    #   self.preSCC_elem --> All accessible nodes to this node's SCC 
+    #   self.SCC_elem --> All nodes with the same SCC with this node
+    #   self.isSinkSCC --> True if this node belong to sink-scc
+    #   self.isSourceSCC --> True if this node belong to source-scc
+    #   self.isIsolatedSCC --> True if this node belong to source-scc
+    #   self.isStronglyConnected --> True if the whole graph is strongly connected
+    #
+    def updateEstimateSCC (self, buffTo, show_step = True):
         # setting suppressPrint to True, only suppress part of printing (nonessential)
 
         # Process the incoming messages
         for dictMsg in buffTo:
             # Check message information
-            if self.isValidMsg(dictMsg):
-                # process message information
+            if self.isValidMsg(dictMsg, show_step):
+                # process message information - maximum consensus algorithm
                 if self.currState == self.estimateSCCState[0]:
-                    # Update each element of x
                     self.x = [max(val) for val in zip(self.x, dictMsg['msg'])]
                     
                 elif self.currState == self.estimateSCCState[1]: 
-                    # Update each element of c
                     self.c = [max(val) for val in zip(self.c, dictMsg['msg'])]
 
                 elif self.currState == self.estimateSCCState[2]:
-                    # Update each element of o
                     self.o = [max(val) for val in zip(self.o, dictMsg['msg'])]
                 
-                else:
-                    print('Node {}: Unusual currState {}'.format(self.v_num, self.currState))
-
-            else:
+                else: # unexpected state
+                    raise AssertionError(
+                        'Node {}: Unusual currState {}'.format(self.v_num, self.currState) )
+            else: # NOT THE EXPECTED MESSAGE during this state
                 if not (dictMsg['msg_type'] == self.linkAddReq): 
-                    print('Node {} inValidMsg: {}'.format(self.v_num, dictMsg))
-                    print('Node {} expecting {} from {}'.format(self.v_num, self.currState, self.in_neigh))
+                    raise AssertionError(
+                        'Node {} inValidMsg: {}. Expecting {} from {}'.format(
+                            self.v_num, dictMsg, self.currState, self.in_neigh) )
+                # ELSE --> pass message as new link is already added during isValidMsg()
 
         self.it += 1
-        # Procedure to check for switching between Verification State
+        # Procedure to check for switching between States
         if self.it % self.n == 0:
             # increment the current state
             self.iterState += 1
@@ -150,36 +175,33 @@ class NodeConn(object):
 
                 # Prohibit to run in the next turn
                 self.isRunning = False
-                if not suppressPrint:
-                    print('Node {} finished Algorithm 2 in iterations {} '.format( \
+                if show_step:
+                    print('Node {} finished Algorithm 3 in iterations {} '.format( \
                         self.v_num, self.it ))
                 # print('x {}'.format(self.x))
                 # print('c {}'.format(self.c))
                 # print('o {}'.format(self.o))
 
-                # Show the Final Verification Status
-                status = ''
-                
                 isOut_SCC = sum(np.take(self.o, self.SCC_elem)) > 0
                 isIn_SCC = len(self.preSCC_elem) > 0 
 
-                # Theorem 3
+                # -----------------------------------------------------
+                # Theorem 3 - Characterization of SCC
+                # -----------------------------------------------------
                 self.isSinkSCC = isIn_SCC and not isOut_SCC
                 self.isSourceSCC = not isIn_SCC and isOut_SCC
                 self.isIsolatedSCC = not isIn_SCC and not isOut_SCC
                 self.isStronglyConnected = self.isIsolatedSCC and (len(self.SCC_elem) == self.n)
 
-                if self.isSinkSCC:
-                    status = '- Sink-SCC'
-                elif self.isSourceSCC:
-                    status = '- Source-SCC'
-                elif self.isIsolatedSCC:
-                    status = '- Isolated-SCC'
-                elif self.isStronglyConnected: 
-                    status = '- strongly connected graph'
+                # Show the Final Verification Status
+                status = ''
+                if self.isSinkSCC: status = '- Sink-SCC'
+                elif self.isSourceSCC: status = '- Source-SCC'
+                elif self.isIsolatedSCC: status = '- Isolated-SCC'
+                elif self.isStronglyConnected: status = '- strongly connected graph'
 
                 # inform status
-                if not suppressPrint:
+                if show_step:
                     print('Node {}: preSCC {} own SCC {} {}'.format( \
                         self.v_num, self.preSCC_elem, self.SCC_elem , status))
 
@@ -205,36 +227,41 @@ class NodeConn(object):
 
 
     # -------------------------------------------------------------------------------
-    # Main Procedure for Algorithm 3: Distributed Algorithm for Solving Problem 1
+    # Main Procedure for Algorithm 4 and 5: Distributed Algorithm for Solving Problem 1
     #     Problem 2: Add additional edges in a distributed manner to strongly connect 
     #                the original graph
     # -------------------------------------------------------------------------------
-    def updateRepBC_Weak (self, buffTo, suppressPrint = True): 
+    # update_representatives_broadcast --> supporting procedure 
+    # to select representatives and broadcast information
+    def update_representatives_broadcast (self, buffTo, show_step = True): 
         # Process the incoming messages
         
         for dictMsg in buffTo:
             # Check message information
-            if self.isValidMsg(dictMsg):
+            if self.isValidMsg(dictMsg, show_step):
                 # process message information
-                if self.currState == self.linkAddState[0]:
-                    # Update each element of localSCCcomm
+                if self.currState == self.linkAddState[0]: # communicate for representative
                     # max consensus to get other nodes information within SCC
                     self.localSCCcomm = [max(val) for val in zip(self.localSCCcomm, dictMsg['msg'])]
 
-                elif self.currState == self.linkAddState[1]:
-                    # Process broadcast information
+                elif self.currState == self.linkAddState[1]: # Process broadcast information
                     if dictMsg['msg'] not in self.retrievedbcData :
                         # New message. save and forward
                         self.retrievedbcData.append(dictMsg['msg'])
                         self.forwardbcData.append(dictMsg['msg'])
                     # else: discard data, already retrieved previously
- 
-            else:
-                print('Node {} inValidMsg: {}'.format(self.v_num, dictMsg))
-                print('Node {} expecting {} from {}'.format(self.v_num, self.currState, self.in_neigh))
+
+                else: # unexpected state
+                    raise AssertionError(
+                        'Node {}: Unusual currState {}'.format(self.v_num, self.currState) ) 
+            else: # NOT THE EXPECTED MESSAGE during this state
+                # Note: no link addition message is expected during this procedure
+                raise AssertionError(
+                    'Node {} inValidMsg: {}. Expecting {} from {}'.format(
+                        self.v_num, dictMsg, self.currState, self.in_neigh) )
 
         self.it += 1
-        # Procedure to check the end of procedure
+        # Procedure to check for switching between States
         if self.it % self.n == 0:
             # increment the current state
             self.iterState += 1
@@ -279,17 +306,13 @@ class NodeConn(object):
                         # print('Node {}: comm {} id_allrep {} isSCCrep {}.'.format( \
                         #      self.v_num, self.localSCCcomm, id_allrep, self.isSCCrep))
 
-                if not suppressPrint:
+                if show_step:
                     out = ''
                     if self.isSCCrep:
-                        if self.isSinkSCC:
-                            out = 'Selected as Sink representative'
-                        elif self.isSourceSCC:
-                            out = 'Selected as Source representative'
-                        elif self.isIsolatedSCC:
-                            out = 'Selected as Isolated representative'
-                        else:
-                            out = 'Weird exception, Selected as ???'
+                        if self.isSinkSCC: out = 'Selected as Sink representative'
+                        elif self.isSourceSCC: out = 'Selected as Source representative'
+                        elif self.isIsolatedSCC: out = 'Selected as Isolated representative'
+                        else: out = 'Weird exception, Selected as ???'
                     print('Node {}: from SCC {} communicating {}. {}'.format( \
                         self.v_num, self.SCC_elem, self.localSCCcomm, out ))
                     # print('Node {} finished determining SCC rep in iterations {} '.format( \
@@ -318,8 +341,9 @@ class NodeConn(object):
                 
                 # Process the collected broadcasted information if sink rep
                 if self.isSCCrep and self.isSinkSCC :
-                    print('Node {} Processing retrieved broadcast data, est Source {} '.format( \
-                        self.v_num, self.retrievedbcData ))
+                    if show_step:
+                        print('Node {} Processing retrieved broadcast data, est Source {} '.format( \
+                            self.v_num, self.retrievedbcData ))
                     
                     self.est_sources = self.retrievedbcData
                     if (self.original_isSinkSCC) and (self.original_estSource is None):
@@ -328,7 +352,8 @@ class NodeConn(object):
         # Return the current state information towards out Neighbors
         return self.constructOutMsg()
     
-    def linkAdditionProcedure (self, it_mode, suppressPrint = True):
+    # linkAdditionProcedure --> suppporting procedure to select and request new links to add
+    def linkAdditionProcedure (self, it_mode, show_step = True):
         request_edge = []
 
         if self.isSCCrep and self.isIsolatedSCC :
@@ -341,9 +366,10 @@ class NodeConn(object):
             # append selected node to out-neighbor
             self.out_neigh = np.append(self.out_neigh, selected_node)
             self.list_newOutNeigh += [selected_node]
-
-            print('Node {}: Reaching out, sending requested new edge to node {}. Out-neighbor {}'\
-                .format(self.v_num, selected_node, self.out_neigh))
+            
+            if show_step:
+                print('Node {}: Reaching out, sending requested new edge to node {}. Out-neighbor {}'\
+                    .format(self.v_num, selected_node, self.out_neigh))
 
             # link addition sending request message to selected source
             request_edge += [{'sender':self.v_num, 'dest':selected_node, \
@@ -354,72 +380,47 @@ class NodeConn(object):
             # this node is representative node of sink-scc
             # Estimate the sources set is retrieved from broadcast data
             
-            # COMMENTED DUE TO CHANGES DURING REVISION
-            # ---------------------------------------------------------
-            # selected_source = []
-            # selected_node = None
-
-            # if it_mode == 0 : # each sink to a single source
-            #     selected_source = [ np.random.choice(self.est_sources) ]
-                        
-            # elif it_mode > 0 : # single sink to all accessible sources
-            #     selected_source = self.est_sources
-                
-            #     # Reach out to non accessible nodes
-            #     temp = np.array(self.x)
-            #     nodes_outWeakConn = np.where(temp == 0)[0]
-            #     if len(nodes_outWeakConn) > 0:
-            #         # For weakly connected, all nodes are accessible to the last sink
-            #         # This procedure will not be processed
-            #         selected_node = np.random.choice(nodes_outWeakConn) 
-            # ---------------------------------------------------------
-    
             # single sink to all accessible sources
-            selected_source = self.est_sources # ADDED DUE TO REVISION
+            selected_source = self.est_sources
 
             # append selected source to out-neighbor
             self.out_neigh = np.append(self.out_neigh, selected_source)
             self.list_newOutNeigh += selected_source
 
             for source in selected_source:
-                print('Node {}: sending requested new edge to node {}. Out-neighbor {}'\
-                    .format(self.v_num, source, self.out_neigh))
+                if show_step:
+                    print('Node {}: sending requested new edge to node {}. Out-neighbor {}'\
+                        .format(self.v_num, source, self.out_neigh))
     
                 # link addition sending request message to selected source
                 request_edge += [{'sender':self.v_num, 'dest':source, \
                     'msg_type':self.linkAddReq, 'msg':''}]
-                    
-            # COMMENTED DUE TO CHANGES DURING REVISION
-            # ---------------------------------------------------------
-            # if selected_node is not None:
-            #     self.out_neigh = np.append(self.out_neigh, selected_node)
-            #     self.list_newOutNeigh += [selected_node]
-
-            #     print('Node {}: Reaching out, sending requested new edge to node {}. Out-neighbor {}'\
-            #         .format(self.v_num, source, self.out_neigh))
-    
-            #     # link addition sending request message to selected source
-            #     request_edge += [{'sender':self.v_num, 'dest':selected_node, \
-            #         'msg_type':self.linkAddReq, 'msg':''}]
-            # ---------------------------------------------------------
-
         
-        if not suppressPrint:
+        if show_step:
             print('Node {} finished linkAdditionProcedure {} in iterations {} '.format( \
                 self.v_num, it_mode, self.it ))
         
         return request_edge
 
-    def updateEnsureStrongConn_Weak (self, buffTo):
-        
+
+    # ------------------------------------------------------------------
+    # ALGORITHM 4 - DISTRIBUTED LINK ADDITION FOR WEAKLY CONNECTED GRAPH
+    # ------------------------------------------------------------------
+    def updateEnsureStrongConn_Weak (self, buffTo, print_mode = None):
+        # Default console printing mode
+        show_general_step = True
+        show_detailed_step = False
+        # Further adjustment when needed
+        if print_mode == 'silent': show_general_step = False
+        elif print_mode == 'detail': show_detailed_step = True
+
         outMsg = []
-        suppressPrint = True
         totalState = self.estimateSCCState + self.linkAddState
         self.currState = totalState[self.iterState]   
         
         if any(item == self.currState for item in self.estimateSCCState) and (self.linkaddIter >= 0):
-            # Keep Running Algorithm 2 until it finished
-            outMsg = self.updateEstimateSCC(buffTo, suppressPrint) # suppress some print output
+            # Keep Running Algorithm 3 until it finished
+            outMsg = self.updateEstimateSCC(buffTo, show_detailed_step)
 
             if not self.isRunning:
                 # The end of updateEstimateSCC Program
@@ -433,18 +434,18 @@ class NodeConn(object):
                     outMsg = self.constructOutMsg()
                 else:
                     # Already strongly connected
-                    print('Node {} finished Algorithm 3 in iterations {}. Graph is strongly connected.'.format( \
-                        self.v_num, self.it ))
+                    if show_general_step:
+                        print('Node {} finished Algorithm 3 in iterations {}. Graph is strongly connected.'.format( \
+                            self.v_num, self.it ))
                 
         elif any(item == self.currState for item in self.linkAddState) and (self.linkaddIter >= 0):
-            # Keep Running updateLinkAdd_Weak until it finished
-            # This process will automatically 
-            outMsg = self.updateRepBC_Weak(buffTo, suppressPrint)
+            # Keep Running update_representatives_broadcast until it is finished
+            outMsg = self.update_representatives_broadcast(buffTo, show_detailed_step)
 
             if not self.isRunning:
-                # End of updateRepBC_Weak process
+                # End of update_representatives_broadcast process
                 # Continue to Link addition procedures
-                request_edge = self.linkAdditionProcedure(self.linkaddIter, suppressPrint)
+                request_edge = self.linkAdditionProcedure(self.linkaddIter, show_detailed_step)
 
                 # Reset Algorithm 2 for next link addition / verification
                 self.initializeNewProcedure() # Only reset state x at this point
@@ -457,49 +458,41 @@ class NodeConn(object):
                 # to process this requested messages on the other side
                 # Here, we will do it while doing verification
                 self.linkaddIter = -1
-                print('Node {} finished Algorithm 3 in iterations {}. Graph should be strongly connected.'.format( \
-                    self.v_num, self.it ))
-                print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
-                    self.v_num))
-
-
-                # COMMENTED DUE TO CHANGES DURING REVISION
-                # ---------------------------------------------------------
-                # self.linkaddIter += 1
-                # if self.linkaddIter == 2: # already through 2 link additions
-                #     # The main algorithm ends here
-                #     # In essence, we need additional 1 iteration
-                #     # to process this requested messages on the other side
-                #     # Here, we will do it while doing verification
-                #     self.linkaddIter = -1
-                
-                #     print('Node {} finished Algorithm 3 in iterations {}. Graph should be strongly connected.'.format( \
-                #         self.v_num, self.it ))
-                #     print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
-                #         self.v_num))
-                # ---------------------------------------------------------
+                if show_general_step:
+                    print('Node {} finished Algorithm 4 in iterations {}. Graph should be strongly connected.'.format( \
+                        self.v_num, self.it ))
+                    print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
+                        self.v_num))
         
         elif (self.linkaddIter == -1):
             # Running Verification to Show that the resulting graph is strongly connected
             self.currState = self.verificationState[self.iterState]   
-            outMsg = self.updateVerifyStrongConn(buffTo) # suppress some print output
+            outMsg = self.updateVerifyStrongConn(buffTo, show_detailed_step) # suppress some print output
         
-        else:
-            print('Node {}: Unusual currState {}, linkaddIter {}'.format(self.v_num, self.currState, self.linkaddIter))
+        else: raise AssertionError(
+            'Node {}: Unusual currState {}, linkaddIter {}'.format(self.v_num, self.currState, self.linkaddIter))
         
-                
         return outMsg
     
     
-    def updateEnsureStrongConn (self, buffTo, suppressPrint = True):
+    # ------------------------------------------------------------------
+    # ALGORITHM 5 - DISTRIBUTED LINK ADDITION FOR DISCONNECTED GRAPH
+    # ------------------------------------------------------------------
+    def updateEnsureStrongConn (self, buffTo, print_mode = None):
+        # Default console printing mode
+        show_general_step = True
+        show_detailed_step = False
+        # Further adjustment when needed
+        if print_mode == 'silent': show_general_step = False
+        elif print_mode == 'detail': show_detailed_step = True
         
         outMsg = []
         totalState = self.estimateSCCState + self.linkAddState
         self.currState = totalState[self.iterState]   
         
         if any(item == self.currState for item in self.estimateSCCState):
-            # Keep Running Algorithm 2 until it finished
-            outMsg = self.updateEstimateSCC(buffTo, suppressPrint) # suppress some print output
+            # Keep Running Algorithm 3 until it finished
+            outMsg = self.updateEstimateSCC(buffTo, show_detailed_step) 
 
             if not self.isRunning:
                 # The end of updateEstimateSCC Program
@@ -513,38 +506,39 @@ class NodeConn(object):
                     outMsg = self.constructOutMsg()
                 else:
                     # Already strongly connected
-                    print('Node {} finished Algorithm 3 in iterations {}. Graph is strongly connected.'.format( \
-                        self.v_num, self.it ))
+                    if show_general_step:
+                        print('Node {} finished Algorithm 5 in iterations {}. Graph is strongly connected.'.format( \
+                            self.v_num, self.it ))
                 
         elif any(item == self.currState for item in self.linkAddState):
-            # Keep Running updateLinkAdd_Weak until it finished
-            # This process will automatically 
-            outMsg = self.updateRepBC_Weak(buffTo, suppressPrint)
+            # Keep Running update_representatives_broadcast until it finished
+            outMsg = self.update_representatives_broadcast(buffTo, show_detailed_step)
 
             if not self.isRunning:
-                # End of updateRepBC_Weak process
+                # End of update_representatives_broadcast process
                 # Continue to Link addition procedures
-                request_edge = self.linkAdditionProcedure(self.linkaddIter, suppressPrint)
+                request_edge = self.linkAdditionProcedure(self.linkaddIter, show_detailed_step)
 
-                # Reset Algorithm 2 for next link addition / verification
+                # Reset Algorithm 5 for next link addition / verification
                 self.initializeNewProcedure() # Only reset state x at this point
                 # Resend new information state
                 outMsg = request_edge + self.constructOutMsg()
     
                 self.linkaddIter += 1
                 
-        else:
-            print('Node {}: Unusual currState {}, linkaddIter {}'.format(self.v_num, self.currState, self.linkaddIter))
+        else: raise AssertionError(
+            'Node {}: Unusual currState {}, linkaddIter {}'.format(self.v_num, self.currState, self.linkaddIter))
         
-                
         return outMsg
-    # END of Main Procedure for Algorithm 3
+
+    # END of Main Procedure for Algorithm 4 and 5
     # -------------------------------------------------------------------------------
 
     # -------------------------------------------------------------------------------
-    # Main Procedure for Algorithm ??: Minimum Link Verification
+    # Main Procedure for Algorithm 6 and 7: Verifying and Enforcing Minimum Link 
     # -------------------------------------------------------------------------------
-    def minLinkFormulation(self, suppressPrint = True):
+    # minLinkFormulation --> supporting procedure to formulate minimum link
+    def minLinkFormulation(self, show_step = True):
         # Constructing the ordering
         p = 0
         w = [] # Ordered Sink
@@ -605,7 +599,7 @@ class NodeConn(object):
                 newLinks += [{'sender':v[len_v-1], 'dest':v[0]}]
 
 
-        if not suppressPrint:
+        if show_step:
             print('Constructing the ordering for minimum Link')
             print('p: {}, OrderSink : {}, OrderSource : {}, OrderIsolated : {}'\
                   .format(p, w, v, q))
@@ -613,15 +607,13 @@ class NodeConn(object):
         
         return newLinks
     
-    def minLinkGuarantee (self, buffTo, suppressPrint = True): 
+    def minLinkGuarantee (self, buffTo, show_step = True): 
         # Process the incoming messages
-        
         for dictMsg in buffTo:
             # Check message information
-            if self.isValidMsg(dictMsg):
+            if self.isValidMsg(dictMsg, show_step):
                 # process message information
-                if self.currState == self.minLinkVerState[0]:
-                    # Update each element of localSCCcomm
+                if self.currState == self.minLinkVerState[0]: # communicate for representative
                     # max consensus to get other nodes information within SCC
                     self.localSCCcomm = [max(val) for val in zip(self.localSCCcomm, dictMsg['msg'])]
 
@@ -638,17 +630,21 @@ class NodeConn(object):
                     if dictMsg['msg'] not in self.retrievedbcData :
                         # New message. save and forward
                         self.retrievedbcData.append(dictMsg['msg'])
-                        self.forwardbcData.append(dictMsg['msg'])
-                        
-                # else: discard data, already retrieved previously
+                        self.forwardbcData.append(dictMsg['msg'])    
+                    # else: discard data, already retrieved previously
  
-            else:
+                else: # unexpected state
+                    raise AssertionError(
+                        'Node {}: Unusual currState {}'.format(self.v_num, self.currState) )
+            else: # NOT THE EXPECTED MESSAGE during this state
                 if not (dictMsg['msg_type'] == self.linkAddReq): 
-                    print('Node {} inValidMsg: {}'.format(self.v_num, dictMsg))
-                    print('Node {} expecting {} from {}'.format(self.v_num, self.currState, self.in_neigh))
+                    raise AssertionError(
+                        'Node {} inValidMsg: {}. Expecting {} from {}'.format(
+                            self.v_num, dictMsg, self.currState, self.in_neigh) )
+                # ELSE --> pass message as new link is already added during isValidMsg()
 
         self.it += 1
-        # Procedure to check the end of procedure
+        # Procedure to check for switching between States
         if self.it % self.n == 0:
             # increment the current state
             self.iterState += 1
@@ -662,7 +658,7 @@ class NodeConn(object):
                 idNode = np.where(np.array(self.localSCCcomm) == max_nedge)[0]
                 self.isSCCrep = self.v_num == max(idNode)
                 
-                if self.isSCCrep:
+                if self.isSCCrep and show_step:
                     print('Node {} is selected as Virtual Leader for Minimum Link Verification'.format(self.v_num))
                                         
                 # Update Initialize the next state
@@ -686,8 +682,8 @@ class NodeConn(object):
                     else :
                         if self.original_isIsolatedSCC:
                             self.listIsolated.append(self.v_num)
-                        else:
-                            print('Node {}: Weird selection as a Virtual leader, not isolated or sink'.format(self.v_num))
+                        else: raise AssertionError(
+                            'Node {}: Weird selection as a Virtual leader, not isolated or sink'.format(self.v_num))
 
                     
                     for bcData in self.retrievedbcData:
@@ -701,25 +697,27 @@ class NodeConn(object):
                     
                     self.listSource = np.unique(np.array(self.listSource)).tolist()
                     
-                    print('Node {} Processing received data'.format(self.v_num))
-                    print(' - totalAddedLinks: {}'.format(totalAddedLinks))
-                    print(' - Sources ({}): {}, Sinks ({}): {}, Isolateds ({}): {}'.format(
-                        len(self.listSource), self.listSource,
-                        len(self.listSink), self.listSink, 
-                        len(self.listIsolated), self.listIsolated))
-                    print(' - pairSinkSource: {}'.format(self.pairSinkSource))
+                    if show_step:
+                        print('Node {} Processing received data'.format(self.v_num))
+                        print(' - totalAddedLinks: {}'.format(totalAddedLinks))
+                        print(' - Sources ({}): {}, Sinks ({}): {}, Isolateds ({}): {}'.format(
+                            len(self.listSource), self.listSource,
+                            len(self.listSink), self.listSink, 
+                            len(self.listIsolated), self.listIsolated))
+                        print(' - pairSinkSource: {}'.format(self.pairSinkSource))
                 
                     minLinkNumber = max(len(self.listSource), len(self.listSink)) + len(self.listIsolated)
                     newLinks = []
                     if totalAddedLinks > minLinkNumber:
-                        print('Number of added link ({}) is NOT minimal ({}). Proposed links reconfiguration.'.format(totalAddedLinks, minLinkNumber))
-                        newLinks = self.minLinkFormulation(suppressPrint)
+                        # COMPUTE MINIMUM LINK
+                        newLinks = self.minLinkFormulation(show_step)
+                        if show_step:
+                            print('Number of added link ({}) is NOT minimal ({}). Proposed links reconfiguration.'.format(totalAddedLinks, minLinkNumber))
                     else:
-                        print('Number of added link is already minimal')
+                        if show_step:                                               
+                            print('Number of added link is already minimal')
                     
                     self.proposedLinks = {'number':len(newLinks), 'links':newLinks}
-                        
-                    
                     # Broadcast Proposed link information in the next step
                 
                 # Update Initialize the next state
@@ -738,7 +736,8 @@ class NodeConn(object):
                     self.isAddedLinkOptimal = ReconfigureLink['number'] == 0 
                     
                     if not self.isAddedLinkOptimal :
-                        print('Node {}: Number of added link is NOT minimal'.format(self.v_num))
+                        if show_step:                        
+                            print('Node {}: Number of added link is NOT minimal'.format(self.v_num))
                                                                                                         
                         # Remove existing added link
                         self.out_neigh = np.setdiff1d(self.out_neigh, np.array(self.list_newOutNeigh))
@@ -750,7 +749,7 @@ class NodeConn(object):
                         # for node in self.list_newInNeigh:
                         #     self.in_neigh.remove(node)
 
-                        if not suppressPrint:
+                        if show_step:
                             if len(self.list_newOutNeigh) > 0:
                                 print('Removing previously added out Neighbor {}, resulting in {}'\
                                       .format(self.list_newOutNeigh, self.out_neigh))
@@ -770,7 +769,7 @@ class NodeConn(object):
                                 self.in_neigh = np.append(self.in_neigh, link['sender'])
                                 self.list_newInNeigh += [link['sender']]
 
-                        if not suppressPrint:
+                        if show_step:
                             if len(self.list_newOutNeigh) > 0:
                                 print('Adding new out Neighbor {}, resulting in {}'\
                                       .format(self.list_newOutNeigh, self.out_neigh))
@@ -779,11 +778,13 @@ class NodeConn(object):
                                       .format(self.list_newInNeigh, self.in_neigh))
                         
                     else:
-                        print('Node {}: Number of added link is already minimal'.format(self.v_num))
-                else:
-                    print('Node {}: Too many retrieved broadcast {}'.format(self.v_num, self.retrievedbcData))
+                        if show_step:
+                            print('Node {}: Number of added link is already minimal'.format(self.v_num))
+                
+                else: raise AssertionError(
+                    'Node {}: Too many retrieved broadcast {}'.format(self.v_num, self.retrievedbcData))
 
-                if not suppressPrint:
+                if show_step:
                     print('Node {} finished Algorithm Minimum Link in iterations {} '.format( \
                         self.v_num, self.it ))
 
@@ -791,7 +792,16 @@ class NodeConn(object):
         return self.constructOutMsg()
         
 
-    def updateEnsureStrongConn_MinLink (self, buffTo, suppressPrint = True):
+    # ------------------------------------------------------------------
+    # ALGORITHM 7 - VERIFYING AND ENFORCING MINIMUM LINK
+    # ------------------------------------------------------------------
+    def updateEnsureStrongConn_MinLink (self, buffTo, print_mode = None):
+        # Default console printing mode
+        show_general_step = True
+        show_detailed_step = False
+        # Further adjustment when needed
+        if print_mode == 'silent': show_general_step = False
+        elif print_mode == 'detail': show_detailed_step = True
 
         outMsg = []
         totalState = self.estimateSCCState + self.linkAddState + self.minLinkVerState
@@ -799,8 +809,8 @@ class NodeConn(object):
         
         if any(item == self.currState for item in (self.estimateSCCState + self.linkAddState) )\
             and (self.linkaddIter >= 0):
-            # Keep Running Algorithm 2 until it finished
-            outMsg = self.updateEnsureStrongConn(buffTo, suppressPrint) # suppress some print output
+            # Keep Running Algorithm 3 until it is finished
+            outMsg = self.updateEnsureStrongConn(buffTo, print_mode) # suppress some print output
 
             if not self.isRunning:
                 # The end of updateEnsureStrongConn
@@ -816,20 +826,20 @@ class NodeConn(object):
                         outMsg = self.constructOutMsg()
                 else:
                     # Already strongly connected
-                    print('Node {} finished Algorithm 3 in iterations {}. Graph is NOT strongly connected ???.'.format( \
-                        self.v_num, self.it ))
+                    if show_general_step:
+                        print('Node {} finished Algorithm 3 in iterations {}. Graph is NOT strongly connected ???.'.format( \
+                            self.v_num, self.it ))
                 
         elif any(item == self.currState for item in self.minLinkVerState) and (self.linkaddIter >= 0):
-            # Keep Running updateLinkAdd_Weak until it finished
-            # This process will automatically 
-            outMsg = self.minLinkGuarantee(buffTo, suppressPrint)
+            # Keep Running minLinkGuarantee until it finished
+            outMsg = self.minLinkGuarantee(buffTo, show_general_step)
 
             if not self.isRunning:
                 # End of all process
                 # Reset Algorithm for next link verification
                 self.initializeNewProcedure() 
 
-                if self.isAddedLinkOptimal :
+                if self.isAddedLinkOptimal and show_general_step:
                     print('Node {} finished MinLink Verification in iterations {}. No configuration.'.format( \
                         self.v_num, self.it ))
 
@@ -837,25 +847,26 @@ class NodeConn(object):
                     # Resend new message to message forwarder about new network config
                     outMsg = [{'sender':self.v_num, 'dest':self.v_num, 'msg_type':'RN', 'msg':''}]
 
-                    print('Node {} finished MinLink Reconfiguration in iterations {}. Graph should be strongly connected.'.format( \
-                        self.v_num, self.it ))
+                    if show_general_step:
+                        print('Node {} finished MinLink Reconfiguration in iterations {}. Graph should be strongly connected.'.format( \
+                            self.v_num, self.it ))
 
                 # Resend new information state
                 outMsg += self.constructOutMsg()
                 # DO Verification, regardless of optimal link or not
                 self.linkaddIter = -1
-                print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
-                    self.v_num))
+                if show_general_step:
+                    print('Node {}: Switching to updateVerifyStrongConn for verification (Not necessarily needed)'.format( \
+                        self.v_num))
         
         elif (self.linkaddIter == -1):
             # Running Verification to Show that the resulting graph is strongly connected
             self.currState = self.verificationState[self.iterState]   
-            outMsg = self.updateVerifyStrongConn(buffTo) # suppress some print output
+            outMsg = self.updateVerifyStrongConn(buffTo, show_detailed_step) # suppress some print output
                 
-        else:
-            print('Node {}: Unusual currState {}, linkaddIter {}'.format(self.v_num, self.currState, self.linkaddIter))
-        
-                
+        else: raise AssertionError(
+            'Node {}: Unusual currState {}, linkaddIter {}'.format(self.v_num, self.currState, self.linkaddIter))
+            
         return outMsg
     # END of Main Procedure for Algorithm 3
     # -------------------------------------------------------------------------------
@@ -905,15 +916,15 @@ class NodeConn(object):
                         temp = 2
                     elif self.original_isIsolatedSCC:
                         temp = 3
-                    else:
-                        print('Node {}: Weird original_SCCrole'.format(self.v_num ))
+                    else: raise AssertionError(
+                        'Node {}: Weird original_SCCrole'.format(self.v_num ))
                 # else do nothing
             
             idPos_ndarray = np.where(self.SCC_elem == self.v_num)[0]
             if len(idPos_ndarray) == 1:
                 idPos = idPos_ndarray[0]
-            else:
-                print('Node {}: weird idPos {}'.format(self.v_num, idPos_ndarray) )
+            else: raise AssertionError(
+                'Node {}: weird idPos {}'.format(self.v_num, idPos_ndarray) )
 
             self.localSCCcomm[idPos] = temp
             self.isSCCrep = False # Reset all previous assignment
@@ -935,7 +946,7 @@ class NodeConn(object):
             self.localSCCcomm[self.v_num] = temp
             
             if temp > 0 and not (self.original_isSinkSCC or self.original_isIsolatedSCC):
-                print('Node {}: Added links but Weird original_SCCrole'.format(self.v_num ))
+                raise AssertionError('Node {}: Added links but Weird original_SCCrole'.format(self.v_num ))
             
         elif self.currState == self.minLinkVerState[1]: 
             self.sendbcData = None
@@ -954,8 +965,8 @@ class NodeConn(object):
             if self.isSCCrep:
                 self.sendbcData = self.proposedLinks
 
-        else:
-            print('Node {}: Unusual Init currState {}'.format(self.v_num, self.currState))
+        else: raise AssertionError(
+            'Node {}: Unusual Init currState {}'.format(self.v_num, self.currState))
 
 
     # Construct Out Message
@@ -1011,14 +1022,14 @@ class NodeConn(object):
         elif self.currState == self.minLinkVerState[2]: 
             pass
             
-        else:
-            print('Node {}: Unusual Init currState {}'.format(self.v_num, self.currState))
+        else: raise AssertionError(
+            'Node {}: Unusual Init currState {}'.format(self.v_num, self.currState))
 
         return out_message
 
 
     # Check Validity of Messages & Accepting Link Addition
-    def isValidMsg(self, dictMsg):
+    def isValidMsg(self, dictMsg, show_step = True):
         # check the destination
         isValid = (dictMsg['dest'] == self.v_num)
         # Check the expected information
@@ -1026,8 +1037,9 @@ class NodeConn(object):
             # Add the requester node to the in-neighbor
             self.in_neigh = np.append(self.in_neigh, dictMsg['sender'])
             self.list_newInNeigh += [dictMsg['sender']]
-            print('Node {}: Accepting requested new edge from node {}. In-neighbor {}'\
-                .format(self.v_num, dictMsg['sender'], self.in_neigh))
+            if show_step:
+                print('Node {}: Accepting requested new edge from node {}. In-neighbor {}'\
+                    .format(self.v_num, dictMsg['sender'], self.in_neigh))
             isValid = False
         else:
             # check the sender

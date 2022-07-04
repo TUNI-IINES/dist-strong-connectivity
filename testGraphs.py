@@ -1,5 +1,29 @@
 import numpy as np
 
+def extract_pickle_graph_n(n):
+    import pickle
+    # n= 50 # sources:13, sinks:15, isolated:8
+    # n=200 # sources:46, sinks:40, isolated:34
+    # n=1000
+    fname = 'misc/generatedA_'+str(n)
+    with open(fname+'.pkl', 'rb') as f: 
+        n, G, A = pickle.load(f)
+
+    return A
+
+def generate_random_n(n, prob=None):
+    import networkx as nx
+    # Random Graph
+    if prob == None:
+        p = 1/n # probability of edge
+    else: p = prob
+    print('Generating graph for ' + str(n) + ' nodes ...')
+    G = nx.gnp_random_graph(n, 1/n, directed=True)
+    A = nx.to_numpy_array(G)
+    # print(A)
+
+
+
 # Strongly connected digraph with 8 nodes
 graph1 = dict(
     A = np.array([ \

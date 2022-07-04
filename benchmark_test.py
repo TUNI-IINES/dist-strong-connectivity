@@ -1,114 +1,115 @@
 import testGraphs as tg
-from msgForwarder import MsgForwarder
+# from msgForwarder import MsgForwarder
 #from nodeconnCDC import NodeConn
-from nodeconnJournal import NodeConn
+# from nodeconnJournal import NodeConn
+from strong_connectedness_test import single_run
 import numpy as np
 import math
 import matplotlib.pyplot as plt
 
-from contextlib import contextmanager
-import sys, os
+# from contextlib import contextmanager
+# import sys, os
 import csv
 from datetime import datetime
-import pickle
+# import pickle
 
 # Admittance matrix to ease assigning for in-neighbor and out-neighbor
 # G = tg.graph1 # Strongly connected digraph with 8 nodes 
-# G = tg.graph2 # Weakly connected digraph with 10 nodes, distinct pair source-sink are 5
+G = tg.graph2 # Weakly connected digraph with 10 nodes, distinct pair source-sink are 5
 #G = tg.graph3 # Disconnected digraph with 20 nodes, distinct pair source-sink are 6
 #G = tg.graph4 # Disconnected digraph with 20 nodes
 # G = tg.graph5 # Disconnected digraph with 50 nodes, distinct pair source-sink are 34
-# A = G['A']
-# n = A.shape[0] # A should always be a square matrix
+A = G['A']
+n = A.shape[0] # A should always be a square matrix
 
-# ValMinLink = max(G['sourceSccNum'], G['sinkSccNum']) + G['isolatedSccNum']
-# MaxAddedLink = 4*G['disjointGraph'] + 34
-# MaxIter = (6*n) + (10*n* math.ceil( math.log2(G['disjointGraph']) ) )
-# MinIter = (6*n) + (5*n) # assuming 1 step iteration with minimum link verification
-
-
-# 50 --> # sources:13, sinks:15, isolated:8, disjoint:11, distinct pair source-sink are 28
-# 200 --> distinct pair source-sink are 167
-n= 50
-# n=200 # sources:46, sinks:40, isolated:34
-# n=1000
-fname = 'misc/generatedA_'+str(n)
-with open(fname+'.pkl', 'rb') as f: 
-    n, G, A = pickle.load(f)
-
-ValMinLink = max(13, 15) + 8
-MaxAddedLink = 4*11 + 28
-MaxIter = (6*n) + (10*n* math.ceil( math.log2(11) ) )
+ValMinLink = max(G['sourceSccNum'], G['sinkSccNum']) + G['isolatedSccNum']
+MaxAddedLink = 2*G['disjointGraph'] + 5
+MaxIter = (6*n) + (10*n* math.ceil( 1 + math.log2(G['disjointGraph']) ) )
 MinIter = (6*n) + (5*n) # assuming 1 step iteration with minimum link verification
-G = {}
-G['name'] = 'test50'
 
-# Function to fully suppress print output in terminal
-@contextmanager
-def suppress_stdout():
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:  
-            yield
-        finally:
-            sys.stdout = old_stdout
 
-def single_run():    
-    # Initialize message forwarder (simulate sending message from one node to the other)
-    msg = MsgForwarder(A, showDraw = False, saveFig = False)
-    # Initialize a list of NodeConn objects
-    Node = [NodeConn(i, n, A[:,i], A[i]) for i in range(n)]
+# # 50 --> # sources:13, sinks:15, isolated:8, disjoint:11, distinct pair source-sink are 28
+# # 200 --> distinct pair source-sink are 167
+# n= 50
+# # n=200 # sources:46, sinks:40, isolated:34
+# # n=1000
+# fname = 'misc/generatedA_'+str(n)
+# with open(fname+'.pkl', 'rb') as f: 
+#     n, G, A = pickle.load(f)
 
-    anyRunning = True
-    outnode_it = 0
-    # Keep looping as long as one node keep running
-    while anyRunning:
+# ValMinLink = max(13, 15) + 8
+# MaxAddedLink = 4*11 + 28
+# MaxIter = (6*n) + (10*n* math.ceil( math.log2(11) ) )
+# MinIter = (6*n) + (5*n) # assuming 1 step iteration with minimum link verification
+# G = {}
+# G['name'] = 'test50'
 
-        # Re-initialized anyRunning
-        anyRunning = False
+# # Function to fully suppress print output in terminal
+# @contextmanager
+# def suppress_stdout():
+#     with open(os.devnull, "w") as devnull:
+#         old_stdout = sys.stdout
+#         sys.stdout = devnull
+#         try:  
+#             yield
+#         finally:
+#             sys.stdout = old_stdout
 
-        # Update running node
-        for i in range(n):
-            if Node[i].isRunning:
-                # Collect incoming message (retrieved from MsgForwarder)
-                inMessage = msg.buffTo[i]
+# def single_run():    
+#     # Initialize message forwarder (simulate sending message from one node to the other)
+#     msg = MsgForwarder(A, showDraw = False, saveFig = False)
+#     # Initialize a list of NodeConn objects
+#     Node = [NodeConn(i, n, A[:,i], A[i]) for i in range(n)]
+
+#     anyRunning = True
+#     outnode_it = 0
+#     # Keep looping as long as one node keep running
+#     while anyRunning:
+
+#         # Re-initialized anyRunning
+#         anyRunning = False
+
+#         # Update running node
+#         for i in range(n):
+#             if Node[i].isRunning:
+#                 # Collect incoming message (retrieved from MsgForwarder)
+#                 inMessage = msg.buffTo[i]
                 
-                # Algorithms in Journal version - to be tested
-                # use "from nodeconnJournal import NodeConn" in line 4
-                # --------------------------------------------------------------------                
-                outMessage = Node[i].updateEnsureStrongConn_MinLink(inMessage, suppressPrint = True)
+#                 # Algorithms in Journal version - to be tested
+#                 # use "from nodeconnJournal import NodeConn" in line 4
+#                 # --------------------------------------------------------------------                
+#                 outMessage = Node[i].updateEnsureStrongConn_MinLink(inMessage, suppressPrint = True)
 
-                # --------------------------------------------------------------------
+#                 # --------------------------------------------------------------------
 
-                # Sending message to other nodes (to be processed later by MsgForwarder)
-                msg.buffFrom[i] = outMessage
+#                 # Sending message to other nodes (to be processed later by MsgForwarder)
+#                 msg.buffFrom[i] = outMessage
                 
-                # Accumulate this node running status into anyRunning
-                anyRunning = anyRunning or Node[i].isRunning
+#                 # Accumulate this node running status into anyRunning
+#                 anyRunning = anyRunning or Node[i].isRunning
 
-        # Forward messages to the correct respondent for next iteration
-        msg.processBuffer()
+#         # Forward messages to the correct respondent for next iteration
+#         msg.processBuffer()
         
-        outnode_it += 1
-        if outnode_it > 20*n*n:
-            anyRunning = False
-            print('quitting the program, infinite loop. Current iterations: {}'.format(outnode_it))
+#         outnode_it += 1
+#         if outnode_it > 20*n*n:
+#             anyRunning = False
+#             print('quitting the program, infinite loop. Current iterations: {}'.format(outnode_it))
 
-    print('Centralized counter: All nodes finished in iterations {}'.format(outnode_it))
-    msg.drawCommNetwork()
+#     print('Centralized counter: All nodes finished in iterations {}'.format(outnode_it))
+#     msg.drawCommNetwork()
 
-    # SANITY TEST: all graph should be strongly connected
-    for i in range(n):
-        assert Node[i].isStronglyConnected, f"Node {i} is not strongly connected"
+#     # SANITY TEST: all graph should be strongly connected
+#     for i in range(n):
+#         assert Node[i].isStronglyConnected, f"Node {i} is not strongly connected"
 
-    # Return the number of iterations, added links, and minimum link
-    ActualIteration = outnode_it - 2*n #deduct time for last verification
-    return ActualIteration, msg.AddedLink, msg.reconfigure_newEdges
+#     # Return the number of iterations, added links, and minimum link
+#     ActualIteration = outnode_it - 2*n #deduct time for last verification
+#     return ActualIteration, msg.AddedLink, msg.reconfigure_newEdges
 
 def main():
     it = 0
-    total_it = n*n
+    total_it = 2* n*n
     testName = 'temp/' + G['name'] + 'benchmark' + datetime.now().strftime("%Y%m%d_%H%M%S")
     csv_file = open( (testName + '.csv'), mode='w')
     csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -117,9 +118,8 @@ def main():
     while it < total_it:
         #if True:
 
-        with suppress_stdout():
-            iterNum, addedLink, minLink = single_run()
-            csv_writer.writerow([iterNum, len(addedLink), addedLink, len(minLink), minLink])
+        iterNum, addedLink, minLink = single_run(print_step = False, display_graph = False)
+        csv_writer.writerow([iterNum, len(addedLink), addedLink, len(minLink), minLink])
         # print('Single run data {}: iter {}, added {} --> {}'.format(it, iterNum, addedLink, minLink))
 
         NumMinLink = len(minLink)

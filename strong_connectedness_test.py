@@ -2,50 +2,31 @@ import testGraphs as tg
 from msgForwarder import MsgForwarder
 # from nodeconnCDC import NodeConn
 from nodeconnJournal import NodeConn
-import networkx as nx
-import numpy as np
-import pickle
 
-# Admittance matrix to ease assigning for in-neighbor and out-neighbor
-#G = tg.graph1 # Strongly connected digraph with 8 nodes 
-#G = tg.graph2 # Weakly connected digraph with 10 nodes
-#G = tg.graph3 # Disconnected digraph with 20 nodes
-#G = tg.graph4 # Disconnected digraph with 20 nodes
-#G = tg.graph5 # Disconnected digraph with 50 nodes
+def single_run(A, print_step = True, display_graph = True, save_data = True): 
+    # A should always be a square matrix
+    n = A.shape[0] 
 
-# A = G['A']
-# n = A.shape[0] # A should always be a square matrix
-
-# # Random Graph
-# n = 200 # number of nodes
-# p = 1/n # probability of edge
-# print('Generating graph for ' + str(n) + ' nodes ...')
-# G = nx.gnp_random_graph(n, 1/n, directed=True)
-# # Amat = nx.adjacency_matrix(G).todense()
-# # A = np.squeeze(np.asarray(Amat))
-# A = nx.to_numpy_array(G)
-# # print(A)
-
-n= 50 # sources:13, sinks:15, isolated:8
-# n=200 # sources:46, sinks:40, isolated:34
-# n=1000
-fname = 'misc/generatedA_'+str(n)
-with open(fname+'.pkl', 'rb') as f: 
-    n, G, A = pickle.load(f)
-
-
-
-def main():    
+    # Silent Mode without showing graph
+    MsgForwarder_is_draw = False
+    MsgForwarder_is_print = False
+    Node_print_mode = 'silent'
+    
+    if display_graph: MsgForwarder_is_draw = True
+    if print_step:
+        print('Start main function.')
+        MsgForwarder_is_print = True
+        Node_print_mode = None
+        
     # Initialize message forwarder (simulate sending message from one node to the other)
-    # msg = MsgForwarder(A)
-    print('Start main function.')
-
-    msg = MsgForwarder(A, showDraw = True, saveFig = True)
+    msg = MsgForwarder(A, 
+        showDraw = MsgForwarder_is_draw, saveFig = save_data, 
+        show_step = MsgForwarder_is_print)
     # msg.drawCommNetwork() # draw original graph
     # Initialize a list of NodeConn objects
     Node = [NodeConn(i, n, A[:,i], A[i]) for i in range(n)]
 
-    print('Finish initiating nodes.')
+    if print_step: print('Finish initiating nodes.')
 
     anyRunning = True
     outnode_it = 0
@@ -80,7 +61,7 @@ def main():
                 # outMessage = Node[i].updateEstimateSCC(inMessage) # Algorithm 2
                 # outMessage = Node[i].updateEnsureStrongConn_Weak(inMessage)
                 # outMessage = Node[i].updateEnsureStrongConn(inMessage)
-                outMessage = Node[i].updateEnsureStrongConn_MinLink(inMessage, suppressPrint = True)
+                outMessage = Node[i].updateEnsureStrongConn_MinLink(inMessage, print_mode = Node_print_mode)
 
                 # --------------------------------------------------------------------
 
@@ -96,7 +77,7 @@ def main():
         outnode_it += 1
         if outnode_it > 10*n*n:
             anyRunning = False
-            print('quitting the program, infinite loop. Current iterations: {}'.format(outnode_it))
+            raise AssertionError('quitting the program, infinite loop. Current iterations: {}'.format(outnode_it))
 
         if n > 100:
             print('-', end='', flush=True)
@@ -104,9 +85,36 @@ def main():
                 if outnode_it%(n*n) == 0: print('.', flush=True)
                 else: print('.', end=' ', flush=True)
 
-
-    print('Centralized counter: All nodes finished in iterations {}'.format(outnode_it))
+    if print_step:
+        print('Centralized counter: All nodes finished in iterations {}'.format(outnode_it))
     msg.drawCommNetwork()
 
+    # SANITY TEST: all graph should be strongly connected
+    for i in range(n):
+        assert Node[i].isStronglyConnected, f"Node {i} is not strongly connected"
+
+    # Return the number of iterations, added links, and minimum link
+    ActualIteration = outnode_it - 2*n #deduct time for last verification
+    return ActualIteration, msg.AddedLink, msg.reconfigure_newEdges
+
 if __name__ == '__main__':
-    main()
+
+    # Admittance matrix to ease assigning for in-neighbor and out-neighbor
+    #A = tg.graph1['A'] # Strongly connected digraph with 8 nodes 
+    A = tg.graph2['A'] # Weakly connected digraph with 10 nodes
+    #A = tg.graph3['A'] # Disconnected digraph with 20 nodes
+    #A = tg.graph4['A'] # Disconnected digraph with 20 nodes
+    #A = tg.graph5['A'] # Disconnected digraph with 50 nodes
+
+    # n= 50 # sources:13, sinks:15, isolated:8
+    # # n=200 # sources:46, sinks:40, isolated:34
+    # # n=1000
+    # A = tg.extract_pickle_graph_n(50)
+
+    # Random graph
+    # A = tg.generate_random_n(50)
+
+    # CALLING THE MAIN FUNCTION
+    single_run(A)
+    # single_run(A, print_step = False, display_graph = False)
+    
