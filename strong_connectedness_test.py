@@ -102,14 +102,14 @@ if __name__ == '__main__':
     # Admittance matrix to ease assigning for in-neighbor and out-neighbor
     #A = tg.graph1['A'] # Strongly connected digraph with 8 nodes 
     # A = tg.graph2['A'] # Weakly connected digraph with 10 nodes
-    #A = tg.graph3['A'] # Disconnected digraph with 20 nodes
+    # A = tg.graph3['A'] # Disconnected digraph with 20 nodes
     #A = tg.graph4['A'] # Disconnected digraph with 20 nodes
-    #A = tg.graph5['A'] # Disconnected digraph with 50 nodes
+    A = tg.graph5['A'] # Disconnected digraph with 50 nodes
 
     # n= 50 # sources:13, sinks:15, isolated:8
     # # n=200 # sources:46, sinks:40, isolated:34
     # # n=1000
-    A = tg.extract_pickle_graph_n(1000)
+    # A = tg.extract_pickle_graph_n(1000)
 
     # Random graph
     # A = tg.generate_random_n(50)
