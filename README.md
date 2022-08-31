@@ -7,14 +7,26 @@ This repository stores the implementation of the proposed approaches in the foll
 ```text
 @inproceedings{atman2021cdc,
   title = {Distributed Algorithms for Verifying and Ensuring Strong Connectivity in Directed Networks},
+  DOI={10.1109/CDC45484.2021.9683729}
   booktitle = {2021 60th IEEE Conference on Decision and Control (CDC)},
   author = {Atman, Made Widhi Surya and Gusrialdi, Azwirman},
-  year = {2021},
-  note = {To be presented}
+  year={2021}, month={Dec}, pages={4798–4803}
 }
 ```
 
-_*An extended version for journal submission is under preparation._
+_An extended version for the following journal is available on the other branch. 
+It is in the process of tidying up and will be merged in the upcoming weeks._
+
+```text
+@article{atman2022tnse,
+  title = {Finite Time Distributed Algorithms for Verifying and Ensuring Strong Connectivity in Directed Networks},
+  DOI={10.1109/TNSE.2022.3200466}
+  journal = {IEEE Transactions on Network Science and Engineering},
+  author = {Atman, Made Widhi Surya and Gusrialdi, Azwirman},
+  year = {2022},
+  note = {early access at https://ieeexplore.ieee.org/document/9866876}
+}
+```
 
 ## Files and Usage
 
